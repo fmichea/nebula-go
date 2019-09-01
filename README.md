@@ -1,0 +1,1 @@
+Documentation: http://bgb.bircd.org/pandocs.htm

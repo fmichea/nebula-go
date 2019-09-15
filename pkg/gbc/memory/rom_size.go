@@ -14,7 +14,6 @@ const (
 	ROMSize1p1MB ROMSize = 0x52 // 72 banks
 	ROMSize1p2MB ROMSize = 0x53 // 80 banks
 	ROMSize1p5MB ROMSize = 0x54 // 96 banks
-
 )
 
 func (s ROMSize) String() string {

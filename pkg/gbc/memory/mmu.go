@@ -266,7 +266,7 @@ func (m *MMU) loadMBC() error {
 }
 
 func (m *MMU) loadROMSize() error {
-	romSize := ROMSize(m.ROM[ROMSizeAddress])
+	romSize := lib.ROMSize(m.ROM[ROMSizeAddress])
 
 	if !romSize.IsValid() {
 		return ErrROMSizeInvalid

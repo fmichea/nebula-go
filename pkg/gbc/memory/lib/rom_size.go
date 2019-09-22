@@ -1,4 +1,4 @@
-package memory
+package lib
 
 type ROMSize uint8
 
@@ -35,6 +35,28 @@ func (s ROMSize) String() string {
 		return name
 	} else {
 		return ""
+	}
+}
+
+func (s ROMSize) BankCount() uint {
+	values := map[ROMSize]uint{
+		ROMSize32KB:  2,
+		ROMSize64KB:  4,
+		ROMSize128KB: 8,
+		ROMSize256KB: 16,
+		ROMSize512KB: 32,
+		ROMSize1MB:   64,
+		ROMSize2MB:   128,
+		ROMSize4MB:   256,
+		ROMSize1p1MB: 72,
+		ROMSize1p2MB: 80,
+		ROMSize1p5MB: 96,
+	}
+
+	if value, ok := values[s]; ok {
+		return value
+	} else {
+		return 2
 	}
 }
 

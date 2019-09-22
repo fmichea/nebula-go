@@ -1,4 +1,4 @@
-package memory
+package lib
 
 type RAMSize uint8
 
@@ -22,6 +22,13 @@ func (s RAMSize) String() string {
 	} else {
 		return ""
 	}
+}
+
+func (s RAMSize) BankCount() uint {
+	if s == RAMSize32KB {
+		return 4
+	}
+	return 1
 }
 
 func (s RAMSize) IsValid() bool {

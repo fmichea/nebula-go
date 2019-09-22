@@ -1,4 +1,4 @@
-package memory
+package lib
 
 import (
 	"fmt"
@@ -21,7 +21,7 @@ var (
 func TestRAMSize_IsValid(t *testing.T) {
 
 	for _, value := range validRAMSizeValues {
-		t.Run(fmt.Sprintf("%s (%x) is valid", value.String(), value), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%s (%#v) is valid", value, value), func(t *testing.T) {
 			assert.True(t, value.IsValid())
 		})
 	}
@@ -33,12 +33,24 @@ func TestRAMSize_IsValid(t *testing.T) {
 
 func TestRAMSize_String(t *testing.T) {
 	for _, value := range validRAMSizeValues {
-		t.Run(fmt.Sprintf("%s (%x) is non-empty string", value.String(), value), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%s (%#v) is non-empty string", value, value), func(t *testing.T) {
 			assert.NotEmpty(t, value.String())
 		})
 	}
 
 	t.Run("invalid case", func(t *testing.T) {
 		assert.Empty(t, invalidRAMSize.String())
+	})
+}
+
+func TestRAMSize_BankCount(t *testing.T) {
+	for _, value := range []RAMSize{RAMSizeNone, RAMSize2KB, RAMSize8KB} {
+		t.Run(fmt.Sprintf("%s (%#v) is not banked", value, value), func(t *testing.T) {
+			assert.Equal(t, uint(1), value.BankCount())
+		})
+	}
+
+	t.Run(fmt.Sprintf("%s (%#v) is banked in 4 banks of 8KByte", RAMSize32KB, RAMSize32KB), func(t *testing.T) {
+		assert.Equal(t, uint(4), RAMSize32KB.BankCount())
 	})
 }

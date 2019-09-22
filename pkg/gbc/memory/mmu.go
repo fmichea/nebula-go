@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+
+	"nebula-go/pkg/gbc/memory/lib"
 )
 
 var (
@@ -275,7 +277,7 @@ func (m *MMU) loadROMSize() error {
 }
 
 func (m *MMU) loadRAMSize() error {
-	ramSize := RAMSize(m.ROM[RAMSizeAddress])
+	ramSize := lib.RAMSize(m.ROM[RAMSizeAddress])
 	if !ramSize.IsValid() {
 		return ErrRAMSizeInvalid
 	}

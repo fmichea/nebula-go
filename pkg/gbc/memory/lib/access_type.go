@@ -1,4 +1,4 @@
-package memory
+package lib
 
 type AccessType int
 

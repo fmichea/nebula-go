@@ -1,13 +1,13 @@
-package memory
+package lib
 
-type ROMDestination int
+type ROMMarket int
 
 const (
-	Japanese ROMDestination = iota
+	Japanese ROMMarket = iota
 	NonJapanese
 )
 
-func (t ROMDestination) String() string {
+func (t ROMMarket) String() string {
 	switch t {
 	case Japanese:
 		return "Japanese"

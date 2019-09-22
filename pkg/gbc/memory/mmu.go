@@ -166,9 +166,9 @@ func (m *MMU) checkROM() error {
 		return err
 	}
 
-	target := Japanese
+	target := lib.Japanese
 	if m.ROM[TargetAddress] != 0 {
-		target = NonJapanese
+		target = lib.NonJapanese
 	}
 	fmt.Println("ROM Target:", target)
 

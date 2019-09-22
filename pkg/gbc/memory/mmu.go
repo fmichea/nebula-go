@@ -96,7 +96,7 @@ var (
 type MMU struct {
 	Title string
 
-	ROMType ROMType
+	ROMType lib.ROMType
 	ROM     []uint8
 }
 
@@ -149,14 +149,14 @@ func (m *MMU) checkROM() error {
 
 	value := m.ROM[CGBFlagAddress]
 	if value == CGBFlagBackwardsCompatible || value == CGBFlagColorOnly {
-		m.ROMType = CGB001
+		m.ROMType = lib.CGB001
 	} else {
-		m.ROMType = DMG01
+		m.ROMType = lib.DMG01
 	}
 
 	fmt.Println("ROM Type:", m.ROMType)
 
-	titleBytes := m.ROM[TitleAddress : TitleAddress+m.getTitleLength()]
+	titleBytes := m.ROM[TitleAddress : TitleAddress+m.ROMType.GetTitleSize()]
 	zeroByteIndex := bytes.IndexByte(titleBytes, 0)
 	m.Title = string(titleBytes[:zeroByteIndex])
 
@@ -283,19 +283,6 @@ func (m *MMU) loadRAMSize() error {
 	}
 	fmt.Println("RAM Size:", ramSize)
 	return nil
-}
-
-func (m *MMU) getTitleLength() int {
-	switch m.ROMType {
-	case CGB001:
-		return 0x16
-
-	case DMG01:
-		return 0x15
-
-	default:
-		return 0
-	}
 }
 
 func (m *MMU) ReadByte(addr uint16) uint8 {

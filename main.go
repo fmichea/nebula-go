@@ -9,6 +9,6 @@ import (
 
 func main() {
 	if _, err := memory.NewMMU(os.Args[1]); err != nil {
-		log.Fatal(err)
+		log.Fatalf("ERROR: %s\n", err)
 	}
 }

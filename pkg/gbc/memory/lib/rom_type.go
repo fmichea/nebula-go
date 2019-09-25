@@ -36,7 +36,7 @@ func (t ROMType) WRAMBankCount() uint {
 
 func (t ROMType) GetTitleSize() int {
 	if t == DMG01 {
-		return 0x16
+		return 16
 	}
-	return 0x15
+	return 15
 }

@@ -25,12 +25,12 @@ func TestROMType_String(t *testing.T) {
 }
 
 func TestROMType_GetTitleSize(t *testing.T) {
-	t.Run("DMG has 0x16 characters long cartridge title", func(t *testing.T) {
-		assert.Equal(t, 0x16, DMG01.GetTitleSize())
+	t.Run("DMG has 16 characters long cartridge title", func(t *testing.T) {
+		assert.Equal(t, 16, DMG01.GetTitleSize())
 	})
 
-	t.Run("CGB has reduced 0x15 characters long cartridge title", func(t *testing.T) {
-		assert.Equal(t, 0x15, CGB001.GetTitleSize())
+	t.Run("CGB has reduced 15 characters long cartridge title", func(t *testing.T) {
+		assert.Equal(t, 15, CGB001.GetTitleSize())
 	})
 }
 

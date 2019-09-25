@@ -1,288 +1,105 @@
 package memory
 
 import (
-	"bytes"
-	"errors"
-	"fmt"
-	"os"
+	"io"
 
+	"nebula-go/pkg/gbc/memory/cartridge"
 	"nebula-go/pkg/gbc/memory/lib"
-)
-
-var (
-	ErrInvalidROMRead      = errors.New("failed to read ROM in full")
-	ErrNintendoLogoInvalid = errors.New("nintendo logo from ROM did not match")
-	ErrMBCNotImplemented   = errors.New("memory controller has not been implemented yet")
-	ErrROMSizeInvalid      = errors.New("got an invalid ROM size value")
-	ErrRAMSizeInvalid      = errors.New("got an invalid RAM size value")
-	ErrChecksumInvalid     = errors.New("cartridge checksum is invalid")
-)
-
-const (
-	CGBFlagAddress             = 0x143
-	CGBFlagBackwardsCompatible = 0x80
-	CGBFlagColorOnly           = 0xC0
-)
-
-var (
-	NintendoLogo = []uint8(
-		"\xce\xed\x66\x66\xcc\x0d\x00\x0b\x03\x73\x00\x83\x00\x0c\x00\x0d" +
-			"\x00\x08\x11\x1f\x88\x89\x00\x0e\xdc\xcc\x6e\xe6\xdd\xdd\xd9\x99" +
-			"\xbb\xbb\x67\x63\x6e\x0e\xec\xcc\xdd\xdc\x99\x9f\xbb\xb9\x33\x3e")
-
-	NintendoLogoAddress    = 0x104
-	NintendoLogoEndAddress = NintendoLogoAddress + len(NintendoLogo)
-
-	TitleAddress  = 0x134
-	TargetAddress = 0x14A
-
-	ROMSizeAddress = 0x148
-	RAMSizeAddress = 0x149
-
-	MBCFlagAddress = 0x0147
-	MBCNames       = []string{
-		/* 0x00 */
-		"ROM ONLY",
-		/* 0x01 -> 0x03: MBC1 */
-		"MBC1",
-		"MBC1+RAM",
-		"MBC1+RAM+BATTERY",
-		/* 0x04: Unused */
-		"",
-		/* 0x05 -> 0x06: MBC2 */
-		"MBC2",
-		"MBC2+BATTERY",
-		/* 0x07: Unused */
-		"",
-		/* 0x08 -> 0x09: ROM+RAM */
-		"ROM+RAM",
-		"ROM+RAM+BATTERY",
-		/* 0x0A: Unused */
-		"",
-		/* 0x0B -> 0x0D: MMM01 */
-		"MMM01",
-		"MMM01+RAM",
-		"MMM01+RAM+BATTERY",
-		/* 0x0E: Unused */
-		"",
-		/* 0x0F -> 0x13: MBC3 */
-		"MBC3+TIMER+BATTERY",
-		"MBC3+TIMER+RAM+BATTERY",
-		"MBC3",
-		"MBC3+RAM",
-		"MBC3+RAM+BATTERY",
-		/* 0x14: Unused */
-		"",
-		/* 0x15 -> 0x17: MBC4 */
-		"MBC4",
-		"MBC4+RAM",
-		"MBC4+RAM+BATTERY",
-		/* 0x18: Unused */
-		"",
-		/* 0x19 -> 0x1E: MBC5 */
-		"MBC5",
-		"MBC5+RAM",
-		"MBC5+RAM+BATTERY",
-		"MBC5+RUMBLE+RAM",
-		"MBC5+RUMBLE+RAM+BATTERY",
-	}
-
-	MBCNamesCount = uint8(len(MBCNames))
-
-	ChecksumStartAddress = 0x134
-	ChecksumEndAddress   = 0x14D
+	"nebula-go/pkg/gbc/memory/mbcs"
+	"nebula-go/pkg/gbc/memory/segments"
 )
 
 type MMU struct {
-	Title string
-
-	ROMType lib.ROMType
-	ROM     []uint8
+	s   map[string]segments.Segment
+	mbc mbcs.MBC
 }
 
-func NewMMU(filename string) (*MMU, error) {
-	result := &MMU{}
-
-	if err := result.loadRom(filename); err != nil {
+func NewMMU(out io.Writer, filename string) (*MMU, error) {
+	cr, err := cartridge.Load(out, filename)
+	if err != nil {
 		return nil, err
 	}
 
-	if err := result.checkROM(); err != nil {
-		return nil, err
+	results := map[string]segments.Segment{}
+
+	configs := []struct {
+		name      string
+		startAddr uint16
+		endAddr   uint16
+		options   []segments.Option
+	}{
+		{
+			name:      "ROM",
+			startAddr: 0x0000,
+			endAddr:   0x7FFF,
+			options: []segments.Option{
+				segments.WithBanks(cr.Size.BankCount()),
+				segments.WithPinnedBank0(),
+				segments.WithInitialData(cr.Data),
+			},
+		},
+		{
+			name:      "VRAM",
+			startAddr: 0x8000,
+			endAddr:   0x9FFF,
+			options: []segments.Option{
+				segments.WithBanks(cr.Type.VRAMBankCount()),
+			},
+		},
+		{
+			name:      "ERAM",
+			startAddr: 0xA000,
+			endAddr:   0xBFFF,
+			options: []segments.Option{
+				segments.WithBanks(cr.RAMSize.BankCount()),
+			},
+		},
+		{
+			name:      "WRAM",
+			startAddr: 0xC000,
+			endAddr:   0xDFFF,
+			options: []segments.Option{
+				segments.WithBanks(cr.Type.WRAMBankCount()),
+				segments.WithPinnedBank0(),
+				segments.WithMirrorMapping(0xE000, 0xFDFF), // ECHO segment.
+			},
+		},
+		{
+			name:      "OAM",
+			startAddr: 0xFE00,
+			endAddr:   0xFE9F,
+		},
+		{
+			name:      "IO_PORTS",
+			startAddr: 0xFF00,
+			endAddr:   0xFF7F,
+		},
+		{
+			name:      "HRAM",
+			startAddr: 0xFF80,
+			endAddr:   0xFFFF,
+		},
+	}
+
+	for _, cfg := range configs {
+		s, err := segments.New(cfg.startAddr, cfg.endAddr, cfg.options...)
+		if err != nil {
+			return nil, err
+		}
+		results[cfg.name] = s
+	}
+
+	mbc := cr.MBCSelector.GetMBC(results["ROM"], results["ERAM"])
+	if mbc == nil {
+		return nil, lib.ErrMBCNotImplemented
+	}
+
+	result := &MMU{
+		s:   results,
+		mbc: mbc,
 	}
 
 	return result, nil
-}
-
-func (m *MMU) loadRom(filename string) error {
-	f, err := os.Open(filename)
-	if err != nil {
-		return err
-	}
-
-	stat, err := f.Stat()
-	if err != nil {
-		return err
-	}
-
-	size := stat.Size()
-
-	m.ROM = make([]uint8, size)
-
-	readCount, err := f.Read(m.ROM)
-	if err != nil {
-		return err
-	}
-
-	if readCount != int(size) {
-		return ErrInvalidROMRead
-	}
-
-	return nil
-}
-
-func (m *MMU) checkROM() error {
-	nintendoLogo := m.ROM[NintendoLogoAddress:NintendoLogoEndAddress]
-	if !bytes.Equal(NintendoLogo, nintendoLogo) {
-		return ErrNintendoLogoInvalid
-	}
-
-	value := m.ROM[CGBFlagAddress]
-	if value == CGBFlagBackwardsCompatible || value == CGBFlagColorOnly {
-		m.ROMType = lib.CGB001
-	} else {
-		m.ROMType = lib.DMG01
-	}
-
-	fmt.Println("ROM Type:", m.ROMType)
-
-	titleBytes := m.ROM[TitleAddress : TitleAddress+m.ROMType.GetTitleSize()]
-	zeroByteIndex := bytes.IndexByte(titleBytes, 0)
-	m.Title = string(titleBytes[:zeroByteIndex])
-
-	fmt.Println("ROM Title:", m.Title)
-
-	if err := m.loadMBC(); err != nil {
-		return err
-	}
-
-	target := lib.Japanese
-	if m.ROM[TargetAddress] != 0 {
-		target = lib.NonJapanese
-	}
-	fmt.Println("ROM Target:", target)
-
-	if err := m.loadROMSize(); err != nil {
-		return err
-	}
-
-	if err := m.loadRAMSize(); err != nil {
-		return err
-	}
-
-	if err := m.verifyHeaderChecksum(); err != nil {
-		return err
-	} else {
-		fmt.Println("Cartridge checksum valid!")
-	}
-
-	return nil
-}
-
-func (m *MMU) verifyHeaderChecksum() error {
-	checksum := uint8(0)
-
-	addr := ChecksumStartAddress
-	for addr <= ChecksumEndAddress {
-		checksum -= m.ROM[addr] + 1
-		addr++
-	}
-
-	if checksum != 0xFF {
-		return ErrChecksumInvalid
-	}
-
-	return nil
-}
-
-func (m *MMU) getMBCFromSelectorValue(value uint8) MBC {
-	switch value {
-	case 0x00:
-	// load ROMonly MBC
-
-	case 0x01, 0x02, 0x03:
-		return &MBC1{}
-
-	case 0x05, 0x06:
-	// load MBC2
-
-	case 0x0F, 0x10, 0x11, 0x12, 0x13:
-	// load MBC3
-
-	case 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E:
-	// load MBC5
-
-	default:
-		// log bad thing?
-	}
-	return nil
-}
-
-func (m *MMU) getMBCNameFromSelectorValue(value uint8) string {
-	if value < MBCNamesCount {
-		return MBCNames[value]
-	} else {
-		switch value {
-		case 0xFC:
-			return "POCKET CAMERA"
-		case 0xFD:
-			return "BANDAI TAMA5"
-		case 0xFE:
-			return "HuC3"
-		case 0xFF:
-			return "HuC1+RAM+BATTERY"
-		}
-	}
-	return ""
-}
-
-func (m *MMU) loadMBC() error {
-	value := m.ROM[MBCFlagAddress]
-
-	mbc := m.getMBCFromSelectorValue(value)
-	name := m.getMBCNameFromSelectorValue(value)
-
-	if name != "" {
-		fmt.Println("Cartridge type:", name)
-	} else {
-		fmt.Printf("Cartridge type is not a known value: %02x\n", value)
-	}
-
-	if mbc == nil {
-		return ErrMBCNotImplemented
-	}
-
-	return nil
-}
-
-func (m *MMU) loadROMSize() error {
-	romSize := lib.ROMSize(m.ROM[ROMSizeAddress])
-
-	if !romSize.IsValid() {
-		return ErrROMSizeInvalid
-	}
-
-	fmt.Println("ROM Size:", romSize)
-	return nil
-}
-
-func (m *MMU) loadRAMSize() error {
-	ramSize := lib.RAMSize(m.ROM[RAMSizeAddress])
-	if !ramSize.IsValid() {
-		return ErrRAMSizeInvalid
-	}
-	fmt.Println("RAM Size:", ramSize)
-	return nil
 }
 
 func (m *MMU) ReadByte(addr uint16) uint8 {
@@ -297,4 +114,28 @@ func (m *MMU) ReadDByte(addr uint16) uint16 {
 
 func (m *MMU) readByteInternal(addr uint16) uint8 {
 	return 0
+}
+
+func (m *MMU) realBytePtr(addr uint16) *uint8 {
+	// FIXME: Handle BGPD here.
+
+	// FIXME: return error when read on MBC with uninitialized? Cannot really happen?
+	if m.mbc.ContainsAddress(addr) {
+		return m.mbc.BytePtr(lib.AccessTypeRead, addr, 0)
+	}
+
+	if segment := m.getSegment(addr); segment != nil {
+		return segment.BytePtr(addr)
+	}
+	return nil
+}
+
+func (m *MMU) getSegment(addr uint16) segments.Segment {
+	// ROM and ERAM excluded because they are accessed through MBC.
+	for _, segment := range m.s {
+		if segment.ContainsAddress(addr) {
+			return segment
+		}
+	}
+	return nil
 }

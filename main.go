@@ -8,7 +8,9 @@ import (
 )
 
 func main() {
-	if _, err := memory.NewMMU(os.Args[1]); err != nil {
+	logger := os.Stdout
+
+	if _, err := memory.NewMMU(logger, os.Args[1]); err != nil {
 		log.Fatalf("ERROR: %s\n", err)
 	}
 }

@@ -18,11 +18,12 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:99d32780e5238c2621fff621123997c3e3cca96db8be13179013aea77dfab551"
+  digest = "1:0496f0e99014b7fd0a560c539f51d0882731137b85494142f47e550e4657176a"
   name = "github.com/stretchr/testify"
   packages = [
     "assert",
     "require",
+    "suite",
   ]
   pruneopts = "UT"
   revision = "221dbe5ed46703ee255b1da0dec05086f5035f62"
@@ -58,6 +59,7 @@
   input-imports = [
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/require",
+    "github.com/stretchr/testify/suite",
     "go.uber.org/multierr",
   ]
   solver-name = "gps-cdcl"

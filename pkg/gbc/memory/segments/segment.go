@@ -4,6 +4,7 @@ type Segment interface {
 	ContainsAddress(addr uint16) bool
 	BytePtr(addr uint16) *uint8
 
+	Bank() uint
 	SelectBank(bank uint) error
 }
 
@@ -119,6 +120,10 @@ func (s *segment) BytePtr(addr uint16) *uint8 {
 	}
 
 	return nil
+}
+
+func (s *segment) Bank() uint {
+	return s.banksCfg.current
 }
 
 func (s *segment) SelectBank(bank uint) error {

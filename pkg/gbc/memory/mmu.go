@@ -121,7 +121,8 @@ func (m *MMU) realBytePtr(addr uint16) *uint8 {
 
 	// FIXME: return error when read on MBC with uninitialized? Cannot really happen?
 	if m.mbc.ContainsAddress(addr) {
-		return m.mbc.BytePtr(lib.AccessTypeRead, addr, 0)
+		ptr, _ := m.mbc.BytePtr(lib.AccessTypeRead, addr, 0) // FIXME
+		return ptr
 	}
 
 	if segment := m.getSegment(addr); segment != nil {

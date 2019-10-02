@@ -70,10 +70,10 @@ func (s *Selector) IsValid() bool {
 func (s *Selector) GetMBC(rom segments.Segment, eram segments.Segment) MBC {
 	switch s.value {
 	case 0x00:
-		return &RomOnlyMBC{}
+		return newRomOnly(rom, eram)
 
 	case 0x01, 0x02, 0x03:
-		return &MBC1{}
+		return newMBC1(rom, eram)
 
 	case 0x05, 0x06:
 	// load MBC2

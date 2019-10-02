@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["mmu.go"],
+    importpath = "nebula-go/pkg/gbc/memory",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/gbc/memory/cartridge:go_default_library",
+        "//pkg/gbc/memory/lib:go_default_library",
+        "//pkg/gbc/memory/mbcs:go_default_library",
+        "//pkg/gbc/memory/segments:go_default_library",
+    ],
+)

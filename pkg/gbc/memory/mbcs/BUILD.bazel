@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "mbc.go",
+        "mbc1.go",
+        "mbc_wrapper.go",
+        "rom_only.go",
+        "selector.go",
+    ],
+    importpath = "nebula-go/pkg/gbc/memory/mbcs",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/gbc/memory/lib:go_default_library",
+        "//pkg/gbc/memory/segments:go_default_library",
+        "//vendor/go.uber.org/multierr:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "mbc1_test.go",
+        "rom_only_test.go",
+        "suite_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//pkg/gbc/memory/lib:go_default_library",
+        "//pkg/gbc/memory/segments:go_default_library",
+        "//vendor/github.com/stretchr/testify/suite:go_default_library",
+    ],
+)

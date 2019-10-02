@@ -1,3 +1,5 @@
-/.itea
+/.idea
 /main
 /vendor
+/data/*.gb
+/bazel-*

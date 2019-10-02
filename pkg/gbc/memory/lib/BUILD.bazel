@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "access_type.go",
+        "errors.go",
+        "ram_size.go",
+        "rom_market.go",
+        "rom_size.go",
+        "rom_type.go",
+    ],
+    importpath = "nebula-go/pkg/gbc/memory/lib",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "ram_size_test.go",
+        "rom_market_test.go",
+        "rom_size_test.go",
+        "rom_type_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = ["//vendor/github.com/stretchr/testify/assert:go_default_library"],
+)

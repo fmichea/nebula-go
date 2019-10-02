@@ -1,0 +1,50 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "errors.go",
+        "header_checksum.go",
+        "load.go",
+        "load_data.go",
+        "mbc_selector.go",
+        "nintendo_logo.go",
+        "ram_size.go",
+        "rom.go",
+        "rom_market.go",
+        "rom_size.go",
+        "rom_title.go",
+        "rom_type.go",
+        "validation.go",
+    ],
+    importpath = "nebula-go/pkg/gbc/memory/cartridge",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/gbc/memory/lib:go_default_library",
+        "//pkg/gbc/memory/mbcs:go_default_library",
+        "//vendor/go.uber.org/multierr:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "header_checksum_test.go",
+        "load_data_test.go",
+        "load_test.go",
+        "mbc_selector_test.go",
+        "nintendo_logo_test.go",
+        "ram_size_test.go",
+        "rom_market_test.go",
+        "rom_size_test.go",
+        "rom_title_test.go",
+        "rom_type_test.go",
+        "validation_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//pkg/gbc/memory/lib:go_default_library",
+        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+        "//vendor/github.com/stretchr/testify/require:go_default_library",
+    ],
+)

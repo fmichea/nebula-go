@@ -102,33 +102,61 @@ func NewMMU(out io.Writer, filename string) (*MMU, error) {
 	return result, nil
 }
 
-func (m *MMU) ReadByte(addr uint16) uint8 {
+func (m *MMU) ReadByte(addr uint16) (uint8, error) {
 	return m.readByteInternal(addr)
 }
 
-func (m *MMU) ReadDByte(addr uint16) uint16 {
-	result := uint16(m.readByteInternal(addr+1)) << 8
-	result |= uint16(m.readByteInternal(addr))
-	return result
+func (m *MMU) ReadDByte(addr uint16) (uint16, error) {
+	var result uint16
+
+	if value, err := m.readByteInternal(addr + 1); err == nil {
+		result |= uint16(value) << 8
+	} else {
+		return 0, err
+	}
+
+	if value, err := m.readByteInternal(addr); err == nil {
+		result |= uint16(value)
+	} else {
+		return 0, err
+	}
+
+	return result, nil
 }
 
-func (m *MMU) readByteInternal(addr uint16) uint8 {
-	return 0
+func (m *MMU) readByteInternal(addr uint16) (uint8, error) {
+	ptr, err := m.realBytePtr(lib.AccessTypeRead, addr, 0)
+	if err != nil {
+		return 0, err
+	}
+
+	if ptr != nil {
+		result := m.readByteMasking(addr, *ptr)
+		// FIXME: add memory watch notification here.
+		return result, nil
+	}
+
+	return 0, lib.ErrInvalidRead
 }
 
-func (m *MMU) realBytePtr(addr uint16) *uint8 {
+func (m *MMU) readByteMasking(addr uint16, value uint8) uint8 {
+	// FIXME: handle NR10...NRXX masks here.
+	return value
+}
+
+func (m *MMU) realBytePtr(accessType lib.AccessType, addr uint16, value uint8) (*uint8, error) {
 	// FIXME: Handle BGPD here.
 
 	// FIXME: return error when read on MBC with uninitialized? Cannot really happen?
 	if m.mbc.ContainsAddress(addr) {
-		ptr, _ := m.mbc.BytePtr(lib.AccessTypeRead, addr, 0) // FIXME
-		return ptr
+		return m.mbc.BytePtr(accessType, addr, value)
 	}
 
 	if segment := m.getSegment(addr); segment != nil {
-		return segment.BytePtr(addr)
+		return segment.BytePtr(addr), nil
 	}
-	return nil
+
+	return nil, nil
 }
 
 func (m *MMU) getSegment(addr uint16) segments.Segment {

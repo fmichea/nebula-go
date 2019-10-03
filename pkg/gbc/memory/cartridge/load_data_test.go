@@ -16,7 +16,7 @@ func TestLoadData(t *testing.T) {
 		require.NoError(t, os.Remove(tmpFile.Name()))
 	}()
 
-	text := []byte("This is a golangcode.com example!")
+	text := []byte("This is an example!")
 
 	_, err = tmpFile.Write(text)
 	require.NoError(t, err)

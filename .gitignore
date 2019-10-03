@@ -3,3 +3,4 @@
 /vendor
 /data/*.gb
 /bazel-*
+/documents

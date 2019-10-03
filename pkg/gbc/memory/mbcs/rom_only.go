@@ -27,11 +27,11 @@ func (r *romOnly) BytePtr(accessType lib.AccessType, addr uint16, value uint8) (
 		if r.rom.ContainsAddress(addr) {
 			ptr = r.rom.BytePtr(addr)
 		} else {
-			err = ErrInvalidRead
+			err = lib.ErrInvalidRead
 		}
 
 	case lib.AccessTypeWrite:
-		err = ErrInvalidWrite
+		err = lib.ErrInvalidWrite
 	}
 
 	return

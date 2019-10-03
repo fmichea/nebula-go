@@ -17,18 +17,18 @@ func (s *unitTestSuite) TestROMOnly_ROMReadFunctional() {
 
 func (s *unitTestSuite) TestROMOnly_CannotReadRAM() {
 	ptr, err := s.romOnly.BytePtr(lib.AccessTypeRead, 0xA000, 0)
-	s.Equal(ErrInvalidRead, err)
+	s.Equal(lib.ErrInvalidRead, err)
 	s.Nil(ptr)
 }
 
 func (s *unitTestSuite) TestROMOnly_CannotWriteROM() {
 	ptr, err := s.romOnly.BytePtr(lib.AccessTypeWrite, 0x4000, 0)
-	s.Equal(ErrInvalidWrite, err)
+	s.Equal(lib.ErrInvalidWrite, err)
 	s.Nil(ptr)
 }
 
 func (s *unitTestSuite) TestROMOnly_CannotWriteRAM() {
 	ptr, err := s.romOnly.BytePtr(lib.AccessTypeWrite, 0xA000, 0)
-	s.Equal(ErrInvalidWrite, err)
+	s.Equal(lib.ErrInvalidWrite, err)
 	s.Nil(ptr)
 }

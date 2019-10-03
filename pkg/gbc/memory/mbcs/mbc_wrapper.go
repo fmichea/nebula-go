@@ -38,8 +38,6 @@ func (w *mbcWrapper) ContainsAddress(addr uint16) bool {
 }
 
 var (
-	ErrInvalidRead    = errors.New("invalid read received by MBC")
-	ErrInvalidWrite   = errors.New("invalid write received by MBC")
 	ErrRAMUnavailable = errors.New("RAM is not available at the moment")
 )
 
@@ -51,7 +49,7 @@ func (w *mbcWrapper) BytePtr(accessType lib.AccessType, addr uint16, value uint8
 		} else if w.eram.ContainsAddress(addr) {
 			ptr, err = w.impl.readRAMAddress(addr)
 		} else {
-			err = ErrInvalidRead
+			err = lib.ErrInvalidRead
 		}
 
 	case lib.AccessTypeWrite:
@@ -79,7 +77,7 @@ func (w *mbcWrapper) BytePtr(accessType lib.AccessType, addr uint16, value uint8
 		} else if 0x6000 <= addr && addr <= 0x7FFF {
 			err = w.impl.bankModeSelect(value)
 		} else {
-			err = ErrInvalidWrite
+			err = lib.ErrInvalidWrite
 		}
 	}
 	return

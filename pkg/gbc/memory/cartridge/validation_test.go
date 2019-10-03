@@ -33,7 +33,7 @@ func TestValidate(t *testing.T) {
 		var out bytes.Buffer
 
 		data := make([]uint8, _minimumROMDataSize)
-		for idx, value := range _nintendoLogo {
+		for idx, value := range NintendoLogo {
 			data[_nintendoLogoStartAddress+idx] = value
 		}
 		data[_checksumEndAddress] = 0xE7 // empty rom checksum

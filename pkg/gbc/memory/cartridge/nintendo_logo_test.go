@@ -10,7 +10,7 @@ func TestVerifyNintendoLogo(t *testing.T) {
 	setup := func(copyLogo bool) []uint8 {
 		romData := make([]uint8, _minimumROMDataSize)
 		if copyLogo {
-			for idx, value := range _nintendoLogo {
+			for idx, value := range NintendoLogo {
 				romData[_nintendoLogoStartAddress+idx] = value
 			}
 		}

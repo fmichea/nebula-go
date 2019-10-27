@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "a_to_address.go",
+        "address_to_a.go",
+        "const_to_reg.go",
+        "factory.go",
+        "high_ram.go",
+        "hl_ptr.go",
+        "reg_to_reg.go",
+        "stack.go",
+    ],
+    importpath = "nebula-go/pkg/gbc/z80/opcodes/load",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/common/bitwise:go_default_library",
+        "//pkg/gbc/memory:go_default_library",
+        "//pkg/gbc/memory/registers:go_default_library",
+        "//pkg/gbc/z80/lib:go_default_library",
+        "//pkg/gbc/z80/opcodes/lib:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "a_to_address_test.go",
+        "address_to_a_test.go",
+        "const_to_reg_test.go",
+        "high_ram_test.go",
+        "hl_ptr_test.go",
+        "reg_to_reg_test.go",
+        "stack_test.go",
+        "suite_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//pkg/common/testhelpers:go_default_library",
+        "//pkg/gbc/memory:go_default_library",
+        "//pkg/gbc/memory/registers:go_default_library",
+        "//pkg/gbc/z80/lib:go_default_library",
+        "//pkg/gbc/z80/opcodes/lib:go_default_library",
+        "//pkg/gbc/z80/opcodes/testhelpers:go_default_library",
+    ],
+)

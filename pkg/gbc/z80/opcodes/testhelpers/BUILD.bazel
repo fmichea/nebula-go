@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["suite.go"],
+    importpath = "nebula-go/pkg/gbc/z80/opcodes/testhelpers",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/gbc/memory:go_default_library",
+        "//pkg/gbc/memory:go_mocks_library",
+        "//pkg/gbc/z80/lib:go_default_library",
+        "@com_github_golang_mock//gomock:go_default_library",
+        "@com_github_stretchr_testify//suite:go_default_library",
+    ],
+)

@@ -1,0 +1,58 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "cb.go",
+        "factory.go",
+        "helpers.go",
+        "reset_bit.go",
+        "rl.go",
+        "rlc.go",
+        "rr.go",
+        "rrc.go",
+        "set_bit.go",
+        "sla.go",
+        "sra.go",
+        "srl.go",
+        "swap.go",
+        "test_bit.go",
+    ],
+    importpath = "nebula-go/pkg/gbc/z80/opcodes/misc/cb",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/common/bitwise:go_default_library",
+        "//pkg/gbc/memory:go_default_library",
+        "//pkg/gbc/memory/registers:go_default_library",
+        "//pkg/gbc/z80/lib:go_default_library",
+        "//pkg/gbc/z80/opcodes/lib:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "cb_test.go",
+        "reset_bit_test.go",
+        "rl_test.go",
+        "rlc_test.go",
+        "rr_test.go",
+        "rrc_test.go",
+        "set_bit_test.go",
+        "sla_test.go",
+        "sra_test.go",
+        "srl_test.go",
+        "suite_test.go",
+        "swap_test.go",
+        "test_bit_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//pkg/common/testhelpers:go_default_library",
+        "//pkg/gbc/memory:go_default_library",
+        "//pkg/gbc/memory/registers:go_default_library",
+        "//pkg/gbc/z80/lib:go_default_library",
+        "//pkg/gbc/z80/opcodes/lib:go_default_library",
+        "//pkg/gbc/z80/opcodes/testhelpers:go_default_library",
+    ],
+)

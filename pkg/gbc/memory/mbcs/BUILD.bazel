@@ -14,7 +14,7 @@ go_library(
     deps = [
         "//pkg/gbc/memory/lib:go_default_library",
         "//pkg/gbc/memory/segments:go_default_library",
-        "//vendor/go.uber.org/multierr:go_default_library",
+        "@org_uber_go_multierr//:go_default_library",
     ],
 )
 
@@ -31,7 +31,7 @@ go_test(
     deps = [
         "//pkg/gbc/memory/lib:go_default_library",
         "//pkg/gbc/memory/segments:go_default_library",
-        "//vendor/github.com/stretchr/testify/assert:go_default_library",
-        "//vendor/github.com/stretchr/testify/suite:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//suite:go_default_library",
     ],
 )

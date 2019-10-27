@@ -3,6 +3,13 @@ all: build
 gazelle:
 	@bazel run //:gazelle
 
+setup-vendor: gazelle
+	@./tools/build-vendor.sh
+
+add-dependency:
+	@dep ensure -add $(PACKAGE)
+	@bazel run //:gazelle -- update-repo -from_file=Gopkg.lock
+
 build:
 	@bazel build //...
 

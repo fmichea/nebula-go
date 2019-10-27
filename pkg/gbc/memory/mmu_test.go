@@ -1,7 +1,7 @@
 package memory
 
 import (
-	"io/ioutil"
+	"nebula-go/pkg/gbc/memory/mbcs"
 	"os"
 	"testing"
 
@@ -15,14 +15,11 @@ import (
 type unitTestSuite struct {
 	suite.Suite
 
-	filename string
-
-	mmu *MMU
+	mmu *mmu
 }
 
-func (s *unitTestSuite) SetupSuite() {
-	tmpFile, err := ioutil.TempFile(os.TempDir(), "nebula-go-")
-	s.NoError(err)
+func (s *unitTestSuite) SetupTest() {
+	var err error
 
 	data := make([]uint8, 0x8000)
 	for idx, value := range cartridge.NintendoLogo {
@@ -33,21 +30,15 @@ func (s *unitTestSuite) SetupSuite() {
 		data[0x200+idx] = uint8(idx)
 	}
 
-	_, err = tmpFile.Write(data)
-	s.NoError(err)
-	s.NoError(tmpFile.Close())
-
-	s.filename = tmpFile.Name()
-}
-
-func (s *unitTestSuite) TearDownSuite() {
-	s.NoError(os.Remove(s.filename))
-}
-
-func (s *unitTestSuite) SetupTest() {
-	var err error
-
-	s.mmu, err = NewMMU(os.Stdout, s.filename)
+	s.mmu, err = newMMUFromCartridge(&cartridge.ROM{
+		Title:       "MMU TEST",
+		Type:        lib.DMG01,
+		Size:        lib.ROMSize32KB,
+		Market:      lib.Japanese,
+		RAMSize:     lib.RAMSizeNone,
+		MBCSelector: mbcs.NewSelector(0),
+		Data:        data,
+	})
 	s.NoError(err)
 }
 
@@ -95,7 +86,7 @@ func TestSuite(t *testing.T) {
 
 func TestNewMMU(t *testing.T) {
 	t.Run("invalid file refuses to create MMU", func(t *testing.T) {
-		_, err := NewMMU(os.Stderr, "wedwedwedwed")
+		_, err := NewMMUFromFile(os.Stderr, "wedwedwedwed")
 		assert.Error(t, err)
 	})
 }

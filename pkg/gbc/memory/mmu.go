@@ -9,17 +9,38 @@ import (
 	"nebula-go/pkg/gbc/memory/segments"
 )
 
-type MMU struct {
-	s   map[string]segments.Segment
-	mbc mbcs.MBC
+type Registers struct{}
+
+type MMU interface {
+	Registers() *Registers
+
+	ReadByte(addr uint16) (uint8, error)
+	WriteByte(addr uint16, value uint8) error
+
+	ReadDByte(addr uint16) (uint16, error)
+	WriteDByte(addr, value uint16) error
 }
 
-func NewMMU(out io.Writer, filename string) (*MMU, error) {
+type mmu struct {
+	s   map[string]segments.Segment
+	mbc mbcs.MBC
+
+	regs *Registers
+}
+
+func NewMMUFromFile(out io.Writer, filename string) (MMU, error) {
 	cr, err := cartridge.Load(out, filename)
 	if err != nil {
 		return nil, err
 	}
+	return NewMMUFromCartridge(cr)
+}
 
+func NewMMUFromCartridge(cr *cartridge.ROM) (MMU, error) {
+	return newMMUFromCartridge(cr)
+}
+
+func newMMUFromCartridge(cr *cartridge.ROM) (*mmu, error) {
 	results := map[string]segments.Segment{}
 
 	configs := []struct {
@@ -94,7 +115,7 @@ func NewMMU(out io.Writer, filename string) (*MMU, error) {
 		return nil, lib.ErrMBCNotImplemented
 	}
 
-	result := &MMU{
+	result := &mmu{
 		s:   results,
 		mbc: mbc,
 	}
@@ -102,11 +123,15 @@ func NewMMU(out io.Writer, filename string) (*MMU, error) {
 	return result, nil
 }
 
-func (m *MMU) ReadByte(addr uint16) (uint8, error) {
+func (m *mmu) Registers() *Registers {
+	return m.regs
+}
+
+func (m *mmu) ReadByte(addr uint16) (uint8, error) {
 	return m.readByteInternal(addr)
 }
 
-func (m *MMU) ReadDByte(addr uint16) (uint16, error) {
+func (m *mmu) ReadDByte(addr uint16) (uint16, error) {
 	var result uint16
 
 	if value, err := m.readByteInternal(addr + 1); err == nil {
@@ -124,7 +149,15 @@ func (m *MMU) ReadDByte(addr uint16) (uint16, error) {
 	return result, nil
 }
 
-func (m *MMU) readByteInternal(addr uint16) (uint8, error) {
+func (m *mmu) WriteByte(addr uint16, value uint8) error {
+	return nil // FIXME
+}
+
+func (m *mmu) WriteDByte(addr, value uint16) error {
+	return nil // FIXME
+}
+
+func (m *mmu) readByteInternal(addr uint16) (uint8, error) {
 	ptr, err := m.realBytePtr(lib.AccessTypeRead, addr, 0)
 	if err != nil {
 		return 0, err
@@ -139,12 +172,12 @@ func (m *MMU) readByteInternal(addr uint16) (uint8, error) {
 	return 0, lib.ErrInvalidRead
 }
 
-func (m *MMU) readByteMasking(addr uint16, value uint8) uint8 {
+func (m *mmu) readByteMasking(addr uint16, value uint8) uint8 {
 	// FIXME: handle NR10...NRXX masks here.
 	return value
 }
 
-func (m *MMU) realBytePtr(accessType lib.AccessType, addr uint16, value uint8) (*uint8, error) {
+func (m *mmu) realBytePtr(accessType lib.AccessType, addr uint16, value uint8) (*uint8, error) {
 	// FIXME: Handle BGPD here.
 
 	// FIXME: return error when read on MBC with uninitialized? Cannot really happen?
@@ -159,7 +192,7 @@ func (m *MMU) realBytePtr(accessType lib.AccessType, addr uint16, value uint8) (
 	return nil, nil
 }
 
-func (m *MMU) getSegment(addr uint16) segments.Segment {
+func (m *mmu) getSegment(addr uint16) segments.Segment {
 	// ROM and ERAM excluded because they are accessed through MBC.
 	for _, segment := range m.s {
 		if segment.ContainsAddress(addr) {

@@ -1,16 +1,23 @@
 package main
 
 import (
+	"io"
 	"log"
 	"os"
 
 	"nebula-go/pkg/gbc/memory"
 )
 
-func main() {
-	logger := os.Stdout
+func buildAndRunGB(logger io.Writer, filename string) error {
+	_, err := memory.NewMMUFromFile(logger, filename)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
-	if _, err := memory.NewMMU(logger, os.Args[1]); err != nil {
+func main() {
+	if err := buildAndRunGB(os.Stdout, os.Args[1]); err != nil {
 		log.Fatalf("ERROR: %s\n", err)
 	}
 }

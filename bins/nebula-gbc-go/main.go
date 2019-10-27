@@ -6,14 +6,17 @@ import (
 	"os"
 
 	"nebula-go/pkg/gbc/memory"
+	"nebula-go/pkg/gbc/z80"
 )
 
 func buildAndRunGB(logger io.Writer, filename string) error {
-	_, err := memory.NewMMUFromFile(logger, filename)
+	mmu, err := memory.NewMMUFromFile(logger, filename)
 	if err != nil {
 		return err
 	}
-	return nil
+
+	cpu := z80.NewCPU(mmu)
+	return cpu.Run()
 }
 
 func main() {

@@ -14,5 +14,8 @@ go_library(
     srcs = ["main.go"],
     importpath = "nebula-go/bins/nebula-gbc-go",
     visibility = ["//visibility:private"],
-    deps = ["//pkg/gbc/memory:go_default_library"],
+    deps = [
+        "//pkg/gbc/memory:go_default_library",
+        "//pkg/gbc/z80:go_default_library",
+    ],
 )

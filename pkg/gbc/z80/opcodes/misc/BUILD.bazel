@@ -1,0 +1,54 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "ccf.go",
+        "cpl.go",
+        "daa.go",
+        "factory.go",
+        "halt.go",
+        "interrupts.go",
+        "noop.go",
+        "rla.go",
+        "rlca.go",
+        "rra.go",
+        "rrca.go",
+        "scf.go",
+        "stop.go",
+    ],
+    importpath = "nebula-go/pkg/gbc/z80/opcodes/misc",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/common/bitwise:go_default_library",
+        "//pkg/gbc/memory:go_default_library",
+        "//pkg/gbc/z80/lib:go_default_library",
+        "//pkg/gbc/z80/opcodes/lib:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "ccf_test.go",
+        "cpl_test.go",
+        "daa_test.go",
+        "halt_test.go",
+        "interrupts_test.go",
+        "noop_test.go",
+        "rla_test.go",
+        "rlca_test.go",
+        "rra_test.go",
+        "rrca_test.go",
+        "scf_test.go",
+        "stop_test.go",
+        "suite_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//pkg/gbc/memory:go_default_library",
+        "//pkg/gbc/z80/lib:go_default_library",
+        "//pkg/gbc/z80/opcodes/lib:go_default_library",
+        "//pkg/gbc/z80/opcodes/testhelpers:go_default_library",
+    ],
+)

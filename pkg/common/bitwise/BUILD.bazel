@@ -4,8 +4,11 @@ go_library(
     name = "go_default_library",
     srcs = [
         "bit.go",
+        "convert.go",
+        "get.go",
         "inverse_mask.go",
         "mask.go",
+        "set.go",
     ],
     importpath = "nebula-go/pkg/common/bitwise",
     visibility = ["//visibility:public"],
@@ -15,8 +18,11 @@ go_test(
     name = "go_default_test",
     srcs = [
         "bit_test.go",
+        "convert_test.go",
+        "get_test.go",
         "inverse_mask_test.go",
         "mask_test.go",
+        "set_test.go",
     ],
     embed = [":go_default_library"],
     deps = ["@com_github_stretchr_testify//assert:go_default_library"],

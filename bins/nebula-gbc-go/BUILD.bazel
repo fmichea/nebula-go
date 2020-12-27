@@ -17,5 +17,6 @@ go_library(
     deps = [
         "//pkg/gbc/memory:go_default_library",
         "//pkg/gbc/z80:go_default_library",
+        "@com_github_pkg_profile//:go_default_library",
     ],
 )

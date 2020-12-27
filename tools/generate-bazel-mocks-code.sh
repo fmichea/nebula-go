@@ -13,7 +13,9 @@ function usage_and_quit {
 test -z "${PKG_NAME}" && usage_and_quit
 test -z "${INTERFACES}" && usage_and_quit
 
+PKG_NAME=$(echo "${PKG_NAME}" | sed -e 's#\/*$##')
 package_basename=$(basename "${PKG_NAME}")
+package_dirname=$(dirname "${PKG_NAME}")
 
 interfaces_code=""
 for interface in ${INTERFACES}; do
@@ -24,10 +26,12 @@ cat <<EOF
 ##############################################################################
 # This code is generated, do not edit go_mocks_library or gomock manually, use
 # ./tools/generate-bazel-mocks-code.sh to generate.
+load("@com_github_jmhodges_bazel_gomock//:gomock.bzl", "gomock")
+
 go_library(
     name = "go_mocks_library",
     srcs = ["${package_basename}_mocks.go"],
-    importpath = "nebula-go/mocks/pkg/gbc/${package_basename}mocks",
+    importpath = "nebula-go/mocks/${package_dirname}/${package_basename}mocks",
     visibility = ["//visibility:public"],
     deps = [
         ":go_default_library",

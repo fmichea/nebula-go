@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["clock.go"],
+    importpath = "nebula-go/pkg/common/clock",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_benbjohnson_clock//:go_default_library"],
+)
+
+##############################################################################
+# This code is generated, do not edit go_mocks_library or gomock manually, use
+# ./tools/generate-bazel-mocks-code.sh to generate.
+load("@com_github_jmhodges_bazel_gomock//:gomock.bzl", "gomock")
+
+go_library(
+    name = "go_mocks_library",
+    srcs = ["clock_mocks.go"],
+    importpath = "nebula-go/mocks/pkg/common/clockmocks",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":go_default_library",
+        "@com_github_benbjohnson_clock//:go_default_library",
+        "@com_github_golang_mock//gomock:go_default_library",
+    ],
+)
+
+# gazelle:exclude clock_mocks.go
+gomock(
+    name = "mocks",
+    out = "clock_mocks.go",
+    interfaces = [
+        "Clock",
+    ],
+    library = "//pkg/common/clock:go_default_library",
+    package = "clockmocks",
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["clock_test.go"],
+    embed = [":go_default_library"],
+    deps = ["@com_github_stretchr_testify//assert:go_default_library"],
+)

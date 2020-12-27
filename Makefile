@@ -8,17 +8,24 @@ setup-vendor: gazelle
 
 add-dependency:
 	@dep ensure -add $(PACKAGE)
-	@bazel run //:gazelle -- update-repo -from_file=Gopkg.lock
+	@bazel run //:gazelle -- update-repos -from_file=Gopkg.lock
 
-build:
+update-dependencies:
+	@dep ensure -update
+
+fetch-dependencies:
+	@bazel fetch //... >&2
+	@./tools/patch-sdl-BUILD-bazel-file.sh >&2
+
+build: fetch-dependencies
 	@bazel build //...
 
-test:
-	@bazel test --nocache_test_results //...
+test: fetch-dependencies
+	@bazel test --test_output=errors //...
 
 clean:
 	@bazel clean
 
 # How to use: $(make run-gbc-cmd) ./data/rom.gb
-run-gbc-cmd:
-	@echo "bazel run //bins/nebula-gbc-go:nebula-gbc-go --"
+run-gbc-cmd: fetch-dependencies
+	@echo "bazel run //bins/nebula-gbc-go:nebula-gbc-go --sandbox_debug --"

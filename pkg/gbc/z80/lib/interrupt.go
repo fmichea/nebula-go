@@ -11,6 +11,11 @@ const (
 	Rst28h
 	Rst30h
 	Rst38h
+	Rst40h
+	Rst48h
+	Rst50h
+	Rst58h
+	Rst60h
 )
 
 func (i Interrupt) Addr() uint16 {
@@ -23,6 +28,11 @@ func (i Interrupt) Addr() uint16 {
 		Rst28h: 0x0028,
 		Rst30h: 0x0030,
 		Rst38h: 0x0038,
+		Rst40h: 0x0040,
+		Rst48h: 0x0048,
+		Rst50h: 0x0050,
+		Rst58h: 0x0058,
+		Rst60h: 0x0060,
 	}
 	return addrs[i]
 }

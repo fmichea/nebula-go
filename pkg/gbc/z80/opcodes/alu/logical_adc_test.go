@@ -2,26 +2,27 @@ package alu
 
 import (
 	"fmt"
+
 	"nebula-go/pkg/common/testhelpers"
-	"nebula-go/pkg/gbc/memory/registers"
-	z80lib "nebula-go/pkg/gbc/z80/lib"
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	"nebula-go/pkg/gbc/z80/registers"
+	registerslib "nebula-go/pkg/gbc/z80/registers/lib"
 )
 
 var _adcTestCases = []aOpTestCase{
 	// Nothing to add, result is 0.
-	{0x00, 0x00, 0x00, z80lib.FlagsCleared, z80lib.ZF},
+	{0x00, 0x00, 0x00, registers.FlagsCleared, registers.ZF},
 	// Carry is accounted for.
-	{0x00, 0x00, 0x01, z80lib.FlagsFullSet, z80lib.FlagsCleared},
+	{0x00, 0x00, 0x01, registers.FlagsFullSet, registers.FlagsCleared},
 	// Half-carry overflow.
-	{0x0F, 0x0F, 0x1E, z80lib.FlagsCleared, z80lib.HC},
-	{0x0F, 0x0F, 0x1F, z80lib.FlagsFullSet, z80lib.HC},
+	{0x0F, 0x0F, 0x1E, registers.FlagsCleared, registers.HC},
+	{0x0F, 0x0F, 0x1F, registers.FlagsFullSet, registers.HC},
 	// Carry
-	{0xFF, 0xF, 0x0E, z80lib.FlagsCleared, z80lib.HC | z80lib.CY},
+	{0xFF, 0xF, 0x0E, registers.FlagsCleared, registers.HC | registers.CY},
 }
 
 func (s *unitTestSuite) TestAdcByteToA() {
-	reg := registers.NewByte(0x00)
+	reg := registerslib.NewByte(0x00)
 	fn := s.factory.AdcByteToA(reg)
 
 	for _, c := range _adcTestCases {

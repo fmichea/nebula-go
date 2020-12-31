@@ -1,11 +1,11 @@
 package alu
 
 import (
-	"nebula-go/pkg/gbc/memory/registers"
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	registerslib "nebula-go/pkg/gbc/z80/registers/lib"
 )
 
-func (f *Factory) DecrementByte(reg registers.Byte) opcodeslib.Opcode {
+func (f *Factory) DecrementByte(reg registerslib.Byte) opcodeslib.Opcode {
 	return func() opcodeslib.OpcodeResult {
 		value := reg.Get() - 1
 
@@ -19,7 +19,7 @@ func (f *Factory) DecrementByte(reg registers.Byte) opcodeslib.Opcode {
 	}
 }
 
-func (f *Factory) DecrementDByte(reg registers.DByte) opcodeslib.Opcode {
+func (f *Factory) DecrementDByte(reg registerslib.DByte) opcodeslib.Opcode {
 	return func() opcodeslib.OpcodeResult {
 		reg.Set(reg.Get() - 1)
 		return opcodeslib.OpcodeSuccess(1, 8)

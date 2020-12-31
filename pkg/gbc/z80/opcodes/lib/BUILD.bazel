@@ -5,8 +5,14 @@ go_library(
     srcs = [
         "add_relative_const.go",
         "opcode.go",
+        "spr8_to_dbyte.go",
     ],
     importpath = "nebula-go/pkg/gbc/z80/opcodes/lib",
     visibility = ["//visibility:public"],
-    deps = ["//pkg/common/bitwise:go_default_library"],
+    deps = [
+        "//pkg/common/bitwise:go_default_library",
+        "//pkg/gbc/memory:go_default_library",
+        "//pkg/gbc/z80/registers:go_default_library",
+        "//pkg/gbc/z80/registers/lib:go_default_library",
+    ],
 )

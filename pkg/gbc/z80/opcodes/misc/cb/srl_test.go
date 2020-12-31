@@ -2,10 +2,11 @@ package cb
 
 import (
 	"fmt"
+
 	"nebula-go/pkg/common/testhelpers"
-	"nebula-go/pkg/gbc/memory/registers"
-	z80lib "nebula-go/pkg/gbc/z80/lib"
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	"nebula-go/pkg/gbc/z80/registers"
+	registerslib "nebula-go/pkg/gbc/z80/registers/lib"
 )
 
 var _srlCases = []struct {
@@ -15,16 +16,16 @@ var _srlCases = []struct {
 	initialFlags uint8
 	resultFlags  uint8
 }{
-	{0x00, 0x00, z80lib.FlagsCleared, z80lib.ZF},
-	{0x00, 0x00, z80lib.FlagsFullSet, z80lib.ZF},
-	{0x0F, 0x07, z80lib.FlagsCleared, z80lib.CY},
-	{0xF0, 0x78, z80lib.FlagsCleared, z80lib.FlagsCleared},
-	{0xF0, 0x78, z80lib.FlagsFullSet, z80lib.FlagsCleared},
-	{0xFF, 0x7F, z80lib.FlagsCleared, z80lib.CY},
+	{0x00, 0x00, registers.FlagsCleared, registers.ZF},
+	{0x00, 0x00, registers.FlagsFullSet, registers.ZF},
+	{0x0F, 0x07, registers.FlagsCleared, registers.CY},
+	{0xF0, 0x78, registers.FlagsCleared, registers.FlagsCleared},
+	{0xF0, 0x78, registers.FlagsFullSet, registers.FlagsCleared},
+	{0xFF, 0x7F, registers.FlagsCleared, registers.CY},
 }
 
 func (s *unitTestSuite) TestSRLByte() {
-	reg := registers.NewByte(0x00)
+	reg := registerslib.NewByte(0x00)
 	fn := s.factory.SRLByte(reg)
 
 	for _, c := range _srlCases {
@@ -76,7 +77,7 @@ func (s *unitTestSuite) TestSRLHLPtr_ValidCase() {
 }
 
 func (s *unitTestSuite) TestSRLHLPtr_InvalidRead() {
-	s.Regs.F.Set(z80lib.FlagsCleared)
+	s.Regs.F.Set(registers.FlagsCleared)
 
 	s.MockMMU.EXPECT().ReadByte(s.Regs.HL.Get()).Return(uint8(0), testhelpers.ErrTesting1)
 
@@ -87,7 +88,7 @@ func (s *unitTestSuite) TestSRLHLPtr_InvalidRead() {
 }
 
 func (s *unitTestSuite) TestSRLHLPtr_InvalidWrite() {
-	s.Regs.F.Set(z80lib.FlagsCleared)
+	s.Regs.F.Set(registers.FlagsCleared)
 
 	s.MockMMU.EXPECT().ReadByte(s.Regs.HL.Get()).Return(uint8(0), nil)
 	s.MockMMU.EXPECT().WriteByte(s.Regs.HL.Get(), uint8(0)).Return(testhelpers.ErrTesting1)

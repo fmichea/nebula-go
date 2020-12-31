@@ -2,17 +2,18 @@ package load
 
 import (
 	"fmt"
+
 	"nebula-go/pkg/common/testhelpers"
-	"nebula-go/pkg/gbc/memory/registers"
-	z80lib "nebula-go/pkg/gbc/z80/lib"
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	"nebula-go/pkg/gbc/z80/registers"
+	registerslib "nebula-go/pkg/gbc/z80/registers/lib"
 )
 
 func (s *unitTestSuite) TestPushDByte_ValidCase() {
 	value := uint16(0xABCD)
 	adjustedSP := s.Regs.SP.Get() - 2
 
-	reg := registers.NewDByte(value)
+	reg := registerslib.NewDByte(value)
 
 	s.MockMMU.EXPECT().WriteDByte(adjustedSP, value).Return(nil)
 
@@ -28,7 +29,7 @@ func (s *unitTestSuite) TestPushDByte_InvalidWrite() {
 	value := uint16(0xABCD)
 	adjustedSP := s.Regs.SP.Get() - 2
 
-	reg := registers.NewDByte(value)
+	reg := registerslib.NewDByte(value)
 
 	s.MockMMU.EXPECT().WriteDByte(adjustedSP, value).Return(testhelpers.ErrTesting1)
 
@@ -42,7 +43,7 @@ func (s *unitTestSuite) TestPopDByte_ValidCase() {
 	value := uint16(0xABCD)
 	sp := s.Regs.SP.Get()
 
-	reg := registers.NewDByte(0x0000)
+	reg := registerslib.NewDByte(0x0000)
 
 	s.MockMMU.EXPECT().ReadDByte(sp).Return(value, nil)
 
@@ -57,7 +58,7 @@ func (s *unitTestSuite) TestPopDByte_ValidCase() {
 func (s *unitTestSuite) TestPopDByte_InvalidRead() {
 	sp := s.Regs.SP.Get()
 
-	reg := registers.NewDByte(0x0000)
+	reg := registerslib.NewDByte(0x0000)
 
 	s.MockMMU.EXPECT().ReadDByte(sp).Return(uint16(0), testhelpers.ErrTesting1)
 
@@ -116,15 +117,18 @@ func (s *unitTestSuite) TestSPR8ToHL_ValidCase() {
 		initialFlags uint8
 		resultFlags  uint8
 	}{
-		{0xABCD, 0x01, 0xABCE, z80lib.FlagsCleared, z80lib.FlagsCleared},
-		{0xABCD, 0x01, 0xABCE, z80lib.FlagsFullSet, z80lib.FlagsCleared},
-		{0xABCD, 0x04, 0xABD1, z80lib.FlagsCleared, z80lib.HC},
-		{0xABCD, 0x73, 0xAC40, z80lib.FlagsCleared, z80lib.HC | z80lib.CY},
+		{0xABCD, 0x00, 0xABCD, registers.FlagsFullSet, registers.FlagsCleared},
 
-		{0xABCD, 0xCE, 0xAB9B, z80lib.FlagsCleared, z80lib.FlagsCleared},
-		{0xABCD, 0xCE, 0xAB9B, z80lib.FlagsFullSet, z80lib.FlagsCleared},
-		{0xAB40, 0xCE, 0xAB0E, z80lib.FlagsCleared, z80lib.HC},
-		{0xAB30, 0xCE, 0xAAFE, z80lib.FlagsCleared, z80lib.HC | z80lib.CY},
+		{0xABCD, 0x01, 0xABCE, registers.FlagsCleared, registers.FlagsCleared},
+		{0xABCD, 0x01, 0xABCE, registers.FlagsFullSet, registers.FlagsCleared},
+		{0xABCD, 0x04, 0xABD1, registers.FlagsCleared, registers.HC},
+		{0xABFD, 0x10, 0xAC0D, registers.FlagsCleared, registers.CY},
+		{0xABCD, 0x73, 0xAC40, registers.FlagsCleared, registers.HC | registers.CY},
+
+		// Addition with negative:
+		{0xAB1D, 0x85, 0xAAA2, registers.FlagsCleared, registers.HC},
+		{0xABF0, 0xCE, 0xABBE, registers.FlagsCleared, registers.CY},
+		{0xABF5, 0xCE, 0xABC3, registers.FlagsCleared, registers.HC | registers.CY},
 	}
 
 	fn := s.factory.SPR8ToHL()

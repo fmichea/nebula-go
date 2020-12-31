@@ -1,15 +1,15 @@
 package mbcs
 
 import (
-	"errors"
-
 	"nebula-go/pkg/gbc/memory/lib"
 	"nebula-go/pkg/gbc/memory/segments"
 )
 
 type mbcImpl interface {
-	readRAMAddress(addr uint16) (*uint8, error)
-	writeRAMAddress(addr uint16, value uint8) (*uint8, error)
+	readRAMAddress(addr uint16) (uint8, error)
+	readRAMAddressSlice(addr uint16, count uint) ([]uint8, error)
+
+	writeRAMAddress(addr uint16, value uint8) error
 
 	ramEnable(value uint8) error
 	bankSelectorZone1(addr uint16, value uint8) error
@@ -37,50 +37,72 @@ func (w *mbcWrapper) ContainsAddress(addr uint16) bool {
 	return w.rom.ContainsAddress(addr) || w.eram.ContainsAddress(addr)
 }
 
-var (
-	ErrRAMUnavailable = errors.New("RAM is not available at the moment")
-)
+func (w *mbcWrapper) AddressRanges() []segments.AddressRange {
+	var result []segments.AddressRange
 
-func (w *mbcWrapper) BytePtr(accessType lib.AccessType, addr uint16, value uint8) (ptr *uint8, err error) {
-	switch accessType {
-	case lib.AccessTypeRead:
-		if w.rom.ContainsAddress(addr) {
-			ptr = w.rom.BytePtr(addr)
-		} else if w.eram.ContainsAddress(addr) {
-			ptr, err = w.impl.readRAMAddress(addr)
-		} else {
-			err = lib.ErrInvalidRead
-		}
+	result = append(result, w.rom.AddressRanges()...)
+	result = append(result, w.eram.AddressRanges()...)
+	return result
+}
 
-	case lib.AccessTypeWrite:
-		// External RAM is writeable, we return a pointer to it.
-		if w.eram.ContainsAddress(addr) {
-			ptr, err = w.impl.writeRAMAddress(addr, value)
-			return
-		}
-
-		// Bank Selector:
-		//   Writing to the ROM is used to controller the MBC behavior.
-		//
-		// Zones:
-		//   0000h-1FFFh: RAM Enable, used to protect the RAM during
-		//                power-down, not implemented yet.
-		//   2000h-3FFFh: ROM Bank Selector, different for every controller.
-		//   4000h-5FFFh: ROM/RAM Bank Selector, different for every controller.
-		//   6000h-7FFFh: MBC mode controller, for MBC1 and MBC3.
-		if addr <= 0x1FFF {
-			err = w.impl.ramEnable(value)
-		} else if 0x2000 <= addr && addr <= 0x3FFF {
-			err = w.impl.bankSelectorZone1(addr, value)
-		} else if 0x4000 <= addr && addr <= 0x5FFF {
-			err = w.impl.bankSelectorZone2(value)
-		} else if 0x6000 <= addr && addr <= 0x7FFF {
-			err = w.impl.bankModeSelect(value)
-		} else {
-			err = lib.ErrInvalidWrite
-		}
+func (w *mbcWrapper) ReadByte(addr uint16) (uint8, error) {
+	if w.rom.ContainsAddress(addr) {
+		return w.rom.ReadByte(addr)
+	} else if w.eram.ContainsAddress(addr) {
+		return w.impl.readRAMAddress(addr)
 	}
-	return
+	return 0, lib.ErrInvalidRead
+}
+
+func (w *mbcWrapper) ReadByteSlice(addr uint16, count uint) ([]uint8, error) {
+	if w.rom.ContainsAddress(addr) {
+		return w.rom.ReadByteSlice(addr, count)
+	} else if w.eram.ContainsAddress(addr) {
+		return w.impl.readRAMAddressSlice(addr, count)
+	}
+	return nil, lib.ErrInvalidRead
+}
+
+func (w *mbcWrapper) WriteByte(addr uint16, value uint8) error {
+	// External RAM is writeable.
+	if w.eram.ContainsAddress(addr) {
+		return w.impl.writeRAMAddress(addr, value)
+	}
+
+	// Bank Selector:
+	//   Writing to the ROM is used to controller the MBC behavior.
+	//
+	// Zones:
+	//   0000h-1FFFh: RAM Enable, used to protect the RAM during
+	//                power-down, not implemented yet.
+	//   2000h-3FFFh: ROM Bank Selector, different for every controller.
+	//   4000h-5FFFh: ROM/RAM Bank Selector, different for every controller.
+	//   6000h-7FFFh: MBC mode controller, for MBC1 and MBC3.
+	switch {
+	case addr <= 0x1FFF:
+		return w.impl.ramEnable(value)
+
+	case 0x2000 <= addr && addr <= 0x3FFF:
+		return w.impl.bankSelectorZone1(addr, value)
+
+	case 0x4000 <= addr && addr <= 0x5FFF:
+		return w.impl.bankSelectorZone2(value)
+
+	case 0x6000 <= addr && addr <= 0x7FFF:
+		return w.impl.bankModeSelect(value)
+
+	default:
+		return lib.ErrInvalidWrite
+	}
+}
+
+func (w *mbcWrapper) WriteByteSlice(addr uint16, values []uint8) error {
+	// TODO: there is nothing in specification disallowing this, not currently used but could be implemented.
+	return ErrMBCSliceOperatioInvalid
+}
+
+func (w *mbcWrapper) ByteHook(addr uint16) (*uint8, error) {
+	return nil, ErrMBCHookInvalid
 }
 
 type defaultImpl struct {
@@ -90,18 +112,25 @@ type defaultImpl struct {
 	ramEnabled bool
 }
 
-func (i *defaultImpl) readRAMAddress(addr uint16) (*uint8, error) {
+func (i *defaultImpl) readRAMAddress(addr uint16) (uint8, error) {
 	if !i.ramEnabled {
-		return nil, ErrRAMUnavailable
+		return 0, ErrRAMUnavailable
 	}
-	return i.eram.BytePtr(addr), nil
+	return i.eram.ReadByte(addr)
 }
 
-func (i *defaultImpl) writeRAMAddress(addr uint16, value uint8) (*uint8, error) {
+func (i *defaultImpl) readRAMAddressSlice(addr uint16, count uint) ([]uint8, error) {
 	if !i.ramEnabled {
 		return nil, ErrRAMUnavailable
 	}
-	return i.eram.BytePtr(addr), nil
+	return i.eram.ReadByteSlice(addr, count)
+}
+
+func (i *defaultImpl) writeRAMAddress(addr uint16, value uint8) error {
+	if !i.ramEnabled {
+		return ErrRAMUnavailable
+	}
+	return i.eram.WriteByte(addr, value)
 }
 
 func (i *defaultImpl) ramEnable(value uint8) error {

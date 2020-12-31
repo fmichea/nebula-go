@@ -9,26 +9,42 @@ func (s *unitTestSuite) TestROMOnly_ContainsAddress() {
 }
 
 func (s *unitTestSuite) TestROMOnly_ROMReadFunctional() {
-	ptr, err := s.romOnly.BytePtr(lib.AccessTypeRead, 0x4000, 0)
-	s.NoError(err)
-	s.NotNil(ptr)
-	s.Equal(uint8(0x01), *ptr)
+	value, err := s.romOnly.ReadByte(0x4000)
+	s.Require().NoError(err)
+	s.Equal(uint8(0x01), value)
 }
 
 func (s *unitTestSuite) TestROMOnly_CannotReadRAM() {
-	ptr, err := s.romOnly.BytePtr(lib.AccessTypeRead, 0xA000, 0)
-	s.Equal(lib.ErrInvalidRead, err)
-	s.Nil(ptr)
+	_, err := s.romOnly.ReadByte(0xA000)
+	s.Require().Equal(lib.ErrInvalidRead, err)
 }
 
 func (s *unitTestSuite) TestROMOnly_CannotWriteROM() {
-	ptr, err := s.romOnly.BytePtr(lib.AccessTypeWrite, 0x4000, 0)
-	s.Equal(lib.ErrInvalidWrite, err)
-	s.Nil(ptr)
+	err := s.romOnly.WriteByte(0x4000, 0)
+	s.Require().Equal(lib.ErrInvalidWrite, err)
 }
 
 func (s *unitTestSuite) TestROMOnly_CannotWriteRAM() {
-	ptr, err := s.romOnly.BytePtr(lib.AccessTypeWrite, 0xA000, 0)
-	s.Equal(lib.ErrInvalidWrite, err)
-	s.Nil(ptr)
+	err := s.romOnly.WriteByte(0xA000, 0)
+	s.Require().Equal(lib.ErrInvalidWrite, err)
+}
+
+func (s *unitTestSuite) TestROMOnly_ReadByteSlice_OKInROM() {
+	_, err := s.romOnly.ReadByteSlice(0x1000, 0x10)
+	s.Require().NoError(err)
+}
+
+func (s *unitTestSuite) TestROMOnly_ReadByteSlice_InvalidInRAM() {
+	_, err := s.romOnly.ReadByteSlice(0xA000, 0x10)
+	s.Require().Equal(lib.ErrInvalidRead, err)
+}
+
+func (s *unitTestSuite) TestROMOnly_WriteByteSlice() {
+	err := s.romOnly.WriteByteSlice(0x1000, nil)
+	s.Require().Equal(ErrMBCSliceOperatioInvalid, err)
+}
+
+func (s *unitTestSuite) TestROMOnly_ByteHook() {
+	_, err := s.romOnly.ByteHook(0x1000)
+	s.Require().Equal(ErrMBCHookInvalid, err)
 }

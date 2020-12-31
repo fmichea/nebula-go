@@ -17,7 +17,7 @@ func (s *unitTestSuite) returnIfFuncValid(fn func() opcodeslib.OpcodeResult, sho
 	result := fn()
 
 	if shouldReturn {
-		s.Equal(opcodeslib.OpcodeSuccess(1, 20), result)
+		s.Equal(opcodeslib.OpcodeSuccess(0, 20), result)
 		s.Equal(addr, s.Regs.PC)
 		s.Equal(sp+2, s.Regs.SP.Get())
 	} else {
@@ -44,7 +44,7 @@ func (s *unitTestSuite) returnFuncValid(fn func() opcodeslib.OpcodeResult) {
 	s.MockMMU.EXPECT().ReadDByte(sp).Return(addr, nil)
 
 	result := fn()
-	s.Equal(opcodeslib.OpcodeSuccess(1, 16), result)
+	s.Equal(opcodeslib.OpcodeSuccess(0, 16), result)
 	s.Equal(sp+2, s.Regs.SP.Get())
 	s.Equal(addr, s.Regs.PC)
 }

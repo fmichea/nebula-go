@@ -2,8 +2,8 @@ package alu
 
 import (
 	"nebula-go/pkg/common/bitwise"
-	"nebula-go/pkg/gbc/memory/registers"
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	registerslib "nebula-go/pkg/gbc/z80/registers/lib"
 )
 
 func (f *Factory) addConstToA(cst uint8) {
@@ -13,7 +13,7 @@ func (f *Factory) addConstToA(cst uint8) {
 }
 
 // add %a, $reg
-func (f *Factory) AddByteToA(reg registers.Byte) opcodeslib.Opcode {
+func (f *Factory) AddByteToA(reg registerslib.Byte) opcodeslib.Opcode {
 	return func() opcodeslib.OpcodeResult {
 		f.addConstToA(reg.Get())
 		return opcodeslib.OpcodeSuccess(1, 4)
@@ -28,7 +28,7 @@ func (f *Factory) AddD8ToA() opcodeslib.Opcode {
 	return f.buildD8ToAFunc(f.addConstToA)
 }
 
-func (f *Factory) AddDByteToHL(reg registers.DByte) opcodeslib.Opcode {
+func (f *Factory) AddDByteToHL(reg registerslib.DByte) opcodeslib.Opcode {
 	return func() opcodeslib.OpcodeResult {
 		value32 := uint32(reg.Get())
 		hl32 := uint32(f.regs.HL.Get())
@@ -50,12 +50,6 @@ func (f *Factory) AddDByteToHL(reg registers.DByte) opcodeslib.Opcode {
 
 func (f *Factory) AddR8ToSP() opcodeslib.Opcode {
 	return func() opcodeslib.OpcodeResult {
-		d8, err := f.mmu.ReadByte(f.regs.PC + 1)
-		if err != nil {
-			return opcodeslib.OpcodeError(err)
-		}
-
-		f.regs.SP.Set(opcodeslib.AddRelativeConst(f.regs.SP.Get(), d8))
-		return opcodeslib.OpcodeSuccess(2, 16)
+		return opcodeslib.SPR8ToDByte(f.mmu, f.regs, f.regs.SP, 16)
 	}
 }

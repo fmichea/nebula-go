@@ -1,26 +1,49 @@
 package z80
 
 import (
+	"fmt"
+	"os"
+
+	"nebula-go/pkg/gbc/graphics"
 	"nebula-go/pkg/gbc/memory"
 	z80lib "nebula-go/pkg/gbc/z80/lib"
 	"nebula-go/pkg/gbc/z80/opcodes"
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	"nebula-go/pkg/gbc/z80/registers"
 )
 
 type CPU struct {
-	MMU  memory.MMU
-	Regs *z80lib.Registers
+	MMU     memory.MMU
+	MMURegs *memory.Registers
 
+	GPU graphics.GPU
+
+	Regs    *registers.Registers
 	Opcodes []opcodeslib.Opcode
+
+	noopOpcode        opcodeslib.Opcode
+	diOpcode          opcodeslib.Opcode
+	inPlaceInterrupts map[z80lib.Interrupt]opcodeslib.Opcode
 }
 
-func NewCPU(mmu memory.MMU) *CPU {
-	regs := z80lib.NewRegisters()
+func NewCPU(mmu memory.MMU, gpu graphics.GPU) *CPU {
+	regs := registers.New()
 
 	factory := opcodes.NewFactory(mmu, regs)
 
+	noopOpcode := factory.Miscellaneous.Noop()
+	diOpcode := factory.Miscellaneous.DI()
+	inplaceInterrupts := map[z80lib.Interrupt]opcodeslib.Opcode{}
+	for _, i := range []z80lib.Interrupt{z80lib.Rst40h, z80lib.Rst48h, z80lib.Rst50h, z80lib.Rst58h, z80lib.Rst60h} {
+		inplaceInterrupts[i] = factory.ControlFlow.CallInterruptInplace(i)
+	}
+
 	return &CPU{
-		MMU:  mmu,
+		MMU:     mmu,
+		MMURegs: mmu.Registers(),
+
+		GPU: gpu,
+
 		Regs: regs,
 
 		// We could probably get smart and generate this automatically, but after the initial toil of writing this,
@@ -28,7 +51,7 @@ func NewCPU(mmu memory.MMU) *CPU {
 		// This has the advantage to be fairly easy to read and verified.
 		Opcodes: []opcodeslib.Opcode{
 			// 0x00 - 0x07
-			factory.Miscellaneous.Noop(),
+			noopOpcode,
 			factory.Load.ConstToDByte(regs.BC),
 			factory.Load.AToBCPtr(),
 			factory.ALU.IncrementDByte(regs.BC),
@@ -331,7 +354,7 @@ func NewCPU(mmu memory.MMU) *CPU {
 			factory.Load.HighRAMToA(),
 			factory.Load.PopDByte(regs.AF),
 			factory.Load.CPtrInHighRAMToA(),
-			factory.Miscellaneous.DI(),
+			diOpcode,
 			nil,
 			factory.Load.PushDByte(regs.AF),
 			factory.ALU.OrD8ToA(),
@@ -347,9 +370,63 @@ func NewCPU(mmu memory.MMU) *CPU {
 			factory.ALU.CompareD8ToA(),
 			factory.ControlFlow.CallInterrupt(z80lib.Rst38h),
 		},
+
+		noopOpcode:        noopOpcode,
+		diOpcode:          diOpcode,
+		inPlaceInterrupts: inplaceInterrupts,
 	}
 }
 
+func (c *CPU) doCycle(withDebug bool) error {
+	clock := uint16(4)
+
+	if !c.Regs.HaltMode {
+		opcode, err := c.MMU.ReadByte(c.Regs.PC)
+		if err != nil {
+			return err
+		}
+
+		if withDebug {
+			mem1, _ := c.MMU.ReadByte(c.Regs.PC + 1)
+			mem2, _ := c.MMU.ReadByte(c.Regs.PC + 2)
+
+			fmt.Printf(
+				"PC: %04X | OPCODE: %02X | MEM: %02X%02X\n",
+				c.Regs.PC, opcode, mem1, mem2)
+		}
+
+		opcodeResult := c.Opcodes[opcode]()
+		if opcodeResult.Err != nil {
+			return opcodeResult.Err
+		}
+
+		c.Regs.PC += opcodeResult.Size
+
+		clock = opcodeResult.Clock
+	}
+
+	// GPU still works at normal speed even in double speed mode.
+	gpuClock := clock
+	if c.MMURegs.KEY1.CurrentSpeed.IsDoubleSpeed() {
+		gpuClock /= 2
+	}
+
+	if err := c.GPU.DoCycles(gpuClock); err != nil {
+		return err
+	}
+
+	c.manageTimers(clock)
+	c.manageInterruptRequests()
+	return nil
+}
+
 func (c *CPU) Run() error {
+	withDebug := os.Getenv("DEBUG") != ""
+
+	for !c.MMU.Registers().Stopped {
+		if err := c.doCycle(withDebug); err != nil {
+			return err
+		}
+	}
 	return nil
 }

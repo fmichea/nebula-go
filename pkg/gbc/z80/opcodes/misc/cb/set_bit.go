@@ -1,8 +1,6 @@
 package cb
 
-import (
-	"nebula-go/pkg/gbc/memory/registers"
-)
+import registerslib "nebula-go/pkg/gbc/z80/registers/lib"
 
 func (f *Factory) setBit(bit uint8) func(uint8) uint8 {
 	return func(value uint8) uint8 {
@@ -11,7 +9,7 @@ func (f *Factory) setBit(bit uint8) func(uint8) uint8 {
 }
 
 func (f *Factory) SetBitInByte(bit uint8) cbbytefunc {
-	return func(reg registers.Byte) cbopcode {
+	return func(reg registerslib.Byte) cbopcode {
 		return f.buildCBOpcodeByte(reg, f.setBit(bit))
 	}
 }

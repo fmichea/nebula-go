@@ -2,21 +2,22 @@ package alu
 
 import (
 	"fmt"
+
 	"nebula-go/pkg/common/testhelpers"
-	"nebula-go/pkg/gbc/memory/registers"
-	z80lib "nebula-go/pkg/gbc/z80/lib"
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	"nebula-go/pkg/gbc/z80/registers"
+	registerslib "nebula-go/pkg/gbc/z80/registers/lib"
 )
 
 var _andTestCases = []aOpTestCase{
-	{0xFF, 0x00, 0x00, z80lib.FlagsCleared, z80lib.ZF | z80lib.HC},
-	{0xFF, 0x00, 0x00, z80lib.FlagsFullSet, z80lib.ZF | z80lib.HC},
-	{0xFF, 0x0F, 0x0F, z80lib.FlagsFullSet, z80lib.HC},
-	{0x8A, 0x0F, 0x0A, z80lib.FlagsCleared, z80lib.HC},
+	{0xFF, 0x00, 0x00, registers.FlagsCleared, registers.ZF | registers.HC},
+	{0xFF, 0x00, 0x00, registers.FlagsFullSet, registers.ZF | registers.HC},
+	{0xFF, 0x0F, 0x0F, registers.FlagsFullSet, registers.HC},
+	{0x8A, 0x0F, 0x0A, registers.FlagsCleared, registers.HC},
 }
 
 func (s *unitTestSuite) TestAndByteToA() {
-	reg := registers.NewByte(0x00)
+	reg := registerslib.NewByte(0x00)
 	fn := s.factory.AndByteToA(reg)
 
 	for _, c := range _andTestCases {

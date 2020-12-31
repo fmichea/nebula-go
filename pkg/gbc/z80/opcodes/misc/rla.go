@@ -3,6 +3,7 @@ package misc
 import (
 	"nebula-go/pkg/common/bitwise"
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	"nebula-go/pkg/gbc/z80/registers"
 )
 
 func (f *Factory) RLA() opcodeslib.Opcode {
@@ -12,8 +13,7 @@ func (f *Factory) RLA() opcodeslib.Opcode {
 
 		// NOTE: inconsistency here between the two CPU opcodes documents, using official z80 one: ZF is not affected
 		//  in official documentation, but is reset in the gameboy opcodes table document.
-		f.regs.F.NE.SetBool(false)
-		f.regs.F.HC.SetBool(false)
+		f.regs.F.Set(registers.FlagsCleared)
 		f.regs.F.CY.Set(bitwise.HighBit8(a))
 
 		f.regs.A.Set((f.regs.A.Get() << 1) | cy)

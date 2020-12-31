@@ -2,27 +2,28 @@ package alu
 
 import (
 	"fmt"
+
 	"nebula-go/pkg/common/testhelpers"
-	"nebula-go/pkg/gbc/memory/registers"
-	z80lib "nebula-go/pkg/gbc/z80/lib"
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	"nebula-go/pkg/gbc/z80/registers"
+	registerslib "nebula-go/pkg/gbc/z80/registers/lib"
 )
 
 var _addTestCases = []aOpTestCase{
 	// Nothing to add, result is 0.
-	{0x00, 0x00, 0x00, z80lib.FlagsCleared, z80lib.ZF},
-	{0x00, 0x00, 0x00, z80lib.FlagsFullSet, z80lib.ZF},
+	{0x00, 0x00, 0x00, registers.FlagsCleared, registers.ZF},
+	{0x00, 0x00, 0x00, registers.FlagsFullSet, registers.ZF},
 	// Small add.
-	{0x00, 0x01, 0x01, z80lib.FlagsFullSet, z80lib.FlagsCleared},
+	{0x00, 0x01, 0x01, registers.FlagsFullSet, registers.FlagsCleared},
 	// Half-carry overflow.
-	{0x0F, 0x0F, 0x1E, z80lib.FlagsCleared, z80lib.HC},
-	{0x0F, 0x0F, 0x1E, z80lib.FlagsFullSet, z80lib.HC},
+	{0x0F, 0x0F, 0x1E, registers.FlagsCleared, registers.HC},
+	{0x0F, 0x0F, 0x1E, registers.FlagsFullSet, registers.HC},
 	// Carry
-	{0xFF, 0xF, 0x0E, z80lib.FlagsCleared, z80lib.HC | z80lib.CY},
+	{0xFF, 0xF, 0x0E, registers.FlagsCleared, registers.HC | registers.CY},
 }
 
 func (s *unitTestSuite) TestAddByteToA() {
-	reg := registers.NewByte(0x00)
+	reg := registerslib.NewByte(0x00)
 	fn := s.factory.AddByteToA(reg)
 
 	for _, c := range _addTestCases {
@@ -113,19 +114,19 @@ func (s *unitTestSuite) TestAddDByteToHL() {
 		resultFlags  uint8
 	}{
 		// Zero sum results in zero result (zero-flag not affected by this op)
-		{0x0000, 0x0000, 0x0000, z80lib.FlagsCleared, z80lib.FlagsCleared},
-		{0x0000, 0x0000, 0x0000, z80lib.FlagsFullSet, z80lib.ZF},
+		{0x0000, 0x0000, 0x0000, registers.FlagsCleared, registers.FlagsCleared},
+		{0x0000, 0x0000, 0x0000, registers.FlagsFullSet, registers.ZF},
 		// Some simple cases, no carry. (again zero-flag not affected by this op)
-		{0x0000, 0x0000, 0x0000, z80lib.FlagsCleared, z80lib.FlagsCleared},
-		{0x0008, 0x0008, 0x0010, z80lib.FlagsFullSet, z80lib.ZF},
+		{0x0000, 0x0000, 0x0000, registers.FlagsCleared, registers.FlagsCleared},
+		{0x0008, 0x0008, 0x0010, registers.FlagsFullSet, registers.ZF},
 		// Half carry does not happen on bit 9, but on bit 13 actually.
-		{0x0080, 0x0080, 0x0100, z80lib.FlagsFullSet, z80lib.ZF},
-		{0x0200, 0x0F00, 0x1100, z80lib.FlagsCleared, z80lib.HC},
+		{0x0080, 0x0080, 0x0100, registers.FlagsFullSet, registers.ZF},
+		{0x0200, 0x0F00, 0x1100, registers.FlagsCleared, registers.HC},
 		// Carry works as usual.
-		{0xFFFF, 0x000F, 0x000E, z80lib.FlagsCleared, z80lib.CY | z80lib.HC},
+		{0xFFFF, 0x000F, 0x000E, registers.FlagsCleared, registers.CY | registers.HC},
 	}
 
-	reg := registers.NewDByte(0x00)
+	reg := registerslib.NewDByte(0x00)
 	fn := s.factory.AddDByteToHL(reg)
 
 	for _, c := range cases {
@@ -148,32 +149,44 @@ func (s *unitTestSuite) TestAddDByteToHL() {
 func (s *unitTestSuite) TestAddR8ToSP_ValidCase() {
 	cases := []struct {
 		initialValue uint16
-		otherValue   uint8
+		r8           uint8
 		resultValue  uint16
+
+		initialFlags uint8
+		resultFlags  uint8
 	}{
-		// Simple adding value.
-		{0xFFF0, 0x00, 0xFFF0},
-		{0xFFF0, 0x04, 0xFFF4},
-		// Negative value.
-		{0xFFF0, 0xF6, 0xFFE6},
+		{0xABCD, 0x00, 0xABCD, registers.FlagsFullSet, registers.FlagsCleared},
+
+		{0xABCD, 0x01, 0xABCE, registers.FlagsCleared, registers.FlagsCleared},
+		{0xABCD, 0x01, 0xABCE, registers.FlagsFullSet, registers.FlagsCleared},
+		{0xABCD, 0x04, 0xABD1, registers.FlagsCleared, registers.HC},
+		{0xABFD, 0x10, 0xAC0D, registers.FlagsCleared, registers.CY},
+		{0xABCD, 0x73, 0xAC40, registers.FlagsCleared, registers.HC | registers.CY},
+
+		// Addition with negative:
+		{0xAB1D, 0x85, 0xAAA2, registers.FlagsCleared, registers.HC},
+		{0xABF0, 0xCE, 0xABBE, registers.FlagsCleared, registers.CY},
+		{0xABF5, 0xCE, 0xABC3, registers.FlagsCleared, registers.HC | registers.CY},
 	}
 
 	fn := s.factory.AddR8ToSP()
 
 	for _, c := range cases {
-		name := fmt.Sprintf("add signed int8 to sp (sp = %#v, r8 = %#v)", c.initialValue, c.otherValue)
+		name := fmt.Sprintf("add signed int8 to sp (sp = %#v, r8 = %#v)", c.initialValue, c.r8)
 
 		s.Run(name, func() {
 			pc := s.Regs.PC
 
-			s.MockMMU.EXPECT().ReadByte(pc+1).Return(c.otherValue, nil)
+			s.MockMMU.EXPECT().ReadByte(pc+1).Return(c.r8, nil)
 
+			s.Regs.F.Set(c.initialFlags)
 			s.Regs.SP.Set(c.initialValue)
 
 			result := fn()
 
 			s.Equal(opcodeslib.OpcodeSuccess(2, 16), result)
 			s.Equal(c.resultValue, s.Regs.SP.Get())
+			s.EqualFlags(c.resultFlags)
 		})
 	}
 }

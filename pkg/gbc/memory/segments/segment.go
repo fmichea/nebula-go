@@ -1,43 +1,28 @@
 package segments
 
-type Segment interface {
+import (
+	"nebula-go/pkg/gbc/memory/lib"
+)
+
+type SegmentBase interface {
+	AddressRanges() []AddressRange
 	ContainsAddress(addr uint16) bool
-	BytePtr(addr uint16) *uint8
+
+	ReadByte(addr uint16) (uint8, error)
+	ReadByteSlice(addr uint16, count uint) ([]uint8, error)
+
+	WriteByte(addr uint16, value uint8) error
+	WriteByteSlice(addr uint16, values []uint8) error
+
+	ByteHook(addr uint16) (*uint8, error)
+}
+
+type Segment interface {
+	SegmentBase
 
 	Bank() uint
+	BankCount() uint
 	SelectBank(bank uint) error
-}
-
-type Option func(*segment) error
-
-func WithBanks(count uint) Option {
-	return func(s *segment) error {
-		return s.banksCfg.setBankCount(count)
-	}
-}
-
-func WithPinnedBank0() Option {
-	return func(s *segment) error {
-		s.banksCfg.makeBank0Pinned()
-		return nil
-	}
-}
-
-func WithInitialData(buffer []uint8) Option {
-	return func(s *segment) error {
-		s.initialBuffer = buffer
-		return nil
-	}
-}
-
-func WithMirrorMapping(startAddr, endAddr uint16) Option {
-	return func(s *segment) error {
-		s.mirrorRanges = append(s.mirrorRanges, addressRange{
-			start: startAddr,
-			end:   endAddr,
-		})
-		return nil
-	}
 }
 
 // New creates a new segment. SegmentOptions can be used to change the behavior of the segment.
@@ -60,9 +45,9 @@ func WithMirrorMapping(startAddr, endAddr uint16) Option {
 // +------------+------------+
 func New(startAddr, endAddr uint16, opts ...Option) (*segment, error) {
 	result := &segment{
-		addressRange: addressRange{
-			start: startAddr,
-			end:   endAddr,
+		addressRange: AddressRange{
+			Start: startAddr,
+			End:   endAddr,
 		},
 
 		banksCfg: newBanksConfig(startAddr, endAddr),
@@ -74,7 +59,7 @@ func New(startAddr, endAddr uint16, opts ...Option) (*segment, error) {
 		}
 	}
 
-	if err := result.initializeAndValidate(); err != nil {
+	if err := result.validateAndInitialize(); err != nil {
 		return nil, err
 	}
 
@@ -82,14 +67,24 @@ func New(startAddr, endAddr uint16, opts ...Option) (*segment, error) {
 }
 
 type segment struct {
-	addressRange addressRange
+	addressRange AddressRange
 
 	banksCfg banksConfig
 
-	buffer        []uint8
+	buffers       [][]uint8
 	initialBuffer []uint8
 
-	mirrorRanges []addressRange
+	mirrorRanges []AddressRange
+}
+
+func (s *segment) AddressRanges() []AddressRange {
+	var result []AddressRange
+
+	result = append(result, s.addressRange)
+	for _, mr := range s.mirrorRanges {
+		result = append(result, mr)
+	}
+	return result
 }
 
 func (s *segment) ContainsAddress(addr uint16) bool {
@@ -106,24 +101,115 @@ func (s *segment) ContainsAddress(addr uint16) bool {
 	return false
 }
 
-func (s *segment) BytePtr(addr uint16) *uint8 {
+func (s *segment) ReadByte(addr uint16) (uint8, error) {
+	ptr, err := s.bytePtr(addr)
+	if err != nil {
+		return 0, err
+	}
+	return *ptr, nil
+}
+
+func (s *segment) ReadByteSlice(addr uint16, count uint) ([]uint8, error) {
+	bank, offset, err := s.byteOffset(addr)
+	if err != nil {
+		return nil, err
+	}
+
+	if !s.addressRange.hasCapacityFromAddress(addr, count) {
+		return nil, ErrSegmentTooSmall
+	}
+
+	bankData := s.buffers[bank]
+	bankDataSizeLeftFromOffset := uint(len(bankData)) - offset
+
+	if count <= bankDataSizeLeftFromOffset {
+		data := bankData[offset : offset+count]
+		return data, nil
+	}
+
+	data := append(
+		bankData[offset:],
+		s.buffers[s.banksCfg.current][:count-bankDataSizeLeftFromOffset]...,
+	)
+	return data, nil
+}
+
+func (s *segment) WriteByte(addr uint16, value uint8) error {
+	ptr, err := s.bytePtr(addr)
+	if err != nil {
+		return err
+	}
+
+	*ptr = value
+	return nil
+}
+
+func (s *segment) WriteByteSlice(addr uint16, values []uint8) error {
+	count := uint(len(values))
+
+	bank, offset, err := s.byteOffset(addr)
+	if err != nil {
+		return err
+	}
+
+	if !s.addressRange.hasCapacityFromAddress(addr, count) {
+		return ErrSegmentTooSmall
+	}
+
+	bankData := s.buffers[bank]
+	bankDataSizeLeftFromOffset := uint(len(bankData)) - offset
+
+	if count <= bankDataSizeLeftFromOffset {
+		for idx, value := range values {
+			bankData[offset+uint(idx)] = value
+		}
+	} else {
+		for idx := uint(0); idx < bankDataSizeLeftFromOffset; idx++ {
+			bankData[offset+idx] = values[idx]
+		}
+
+		for idx, value := range values[bankDataSizeLeftFromOffset:] {
+			s.buffers[s.banksCfg.current][idx] = value
+		}
+	}
+	return nil
+}
+
+func (s *segment) ByteHook(addr uint16) (*uint8, error) {
+	if s.banksCfg.containsAddress(addr) && s.banksCfg.isBanked(addr) {
+		return nil, ErrInvalidHookInBank
+	}
+	return s.bytePtr(addr)
+}
+
+func (s *segment) byteOffset(addr uint16) (uint, uint, error) {
 	if s.banksCfg.containsAddress(addr) {
-		return s.bytePtrForBankAndOffset(s.banksCfg.asOffset(addr), s.banksCfg.current)
+		return s.banksCfg.current, s.banksCfg.asOffset(addr), nil
 	} else if s.addressRange.containsAddress(addr) {
-		return s.bytePtrForBankAndOffset(s.addressRange.asOffset(addr), 0)
+		return 0, s.addressRange.asOffset(addr), nil
 	}
 
 	for _, mr := range s.mirrorRanges {
-		if mr.containsAddress(addr) {
-			return s.BytePtr(mr.transposeAddress(s.addressRange, addr))
-		}
+		return s.byteOffset(mr.transposeAddress(s.addressRange, addr))
 	}
 
-	return nil
+	return 0, 0, lib.ErrInvalidSegmentAddr
+}
+
+func (s *segment) bytePtr(addr uint16) (*uint8, error) {
+	bank, offset, err := s.byteOffset(addr)
+	if err != nil {
+		return nil, err
+	}
+	return &s.buffers[bank][offset], nil
 }
 
 func (s *segment) Bank() uint {
 	return s.banksCfg.current
+}
+
+func (s *segment) BankCount() uint {
+	return s.banksCfg.count
 }
 
 func (s *segment) SelectBank(bank uint) error {
@@ -132,20 +218,27 @@ func (s *segment) SelectBank(bank uint) error {
 
 // Due to the options model, some of the initialization must be done after all options functions
 // have been executed. This is what this function does.
-func (s *segment) initializeAndValidate() error {
+func (s *segment) validateAndInitialize() error {
 	// Initialize and validate the banks configuration.
-	if err := s.banksCfg.initializeAndValidate(); err != nil {
+	if err := s.banksCfg.validateAndInitialize(); err != nil {
 		return err
 	}
 
-	// Create the internal buffer of the proper size.
-	bufferSize := s.banksCfg.count * s.banksCfg.sizePerBank()
-	s.buffer = make([]uint8, bufferSize)
+	sizePerBank := s.banksCfg.sizePerBank()
+
+	// Create the internal buffer for each bank within this segment.
+	buffer := make([]uint8, s.banksCfg.count*sizePerBank)
 
 	// Copying the initial buffer, if we did not copy the full buffer then the internal buffer is smaller, therefore
 	// the buffers were incompatible.
-	if n := copy(s.buffer, s.initialBuffer); n != len(s.initialBuffer) {
+	if n := copy(buffer, s.initialBuffer); n != len(s.initialBuffer) {
 		return ErrBufferIncompatible
+	}
+
+	// Now we split the buffer into each bank.
+	s.buffers = make([][]uint8, s.banksCfg.count)
+	for bankIdx := uint(0); bankIdx < s.banksCfg.count; bankIdx++ {
+		s.buffers[bankIdx] = buffer[bankIdx*sizePerBank : (bankIdx+1)*sizePerBank]
 	}
 
 	// Mirrored ranges must fit into the segment, the mirrored range may cross banked boundaries.
@@ -156,9 +249,4 @@ func (s *segment) initializeAndValidate() error {
 	}
 
 	return nil
-}
-
-func (s *segment) bytePtrForBankAndOffset(addr uint16, bank uint) *uint8 {
-	offset := uint(addr) + s.banksCfg.sizePerBank()*bank
-	return &s.buffer[offset]
 }

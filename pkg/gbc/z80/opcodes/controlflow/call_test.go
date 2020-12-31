@@ -2,12 +2,14 @@ package controlflow
 
 import (
 	"nebula-go/pkg/common/testhelpers"
-	"nebula-go/pkg/gbc/memory/registers"
 	z80lib "nebula-go/pkg/gbc/z80/lib"
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	registerslib "nebula-go/pkg/gbc/z80/registers/lib"
 )
 
-func (s *unitTestSuite) callInterrupt(interrupt z80lib.Interrupt) {
+type callInterruptBuilderFN func(interrupt z80lib.Interrupt) opcodeslib.Opcode
+
+func (s *unitTestSuite) callInterrupt(callInterruptBuilder callInterruptBuilderFN, interrupt z80lib.Interrupt, returnAddr uint16) {
 	offsetSP := s.Regs.SP.Get() - 2
 	pc := s.Regs.PC
 
@@ -15,15 +17,15 @@ func (s *unitTestSuite) callInterrupt(interrupt z80lib.Interrupt) {
 	s.Assert().NotEqual(interrupt.Addr(), pc)
 
 	// PC+1 is going to be pushed on the stack.
-	s.MockMMU.EXPECT().WriteDByte(offsetSP, pc+1).Return(nil)
+	s.MockMMU.EXPECT().WriteDByte(offsetSP, returnAddr).Return(nil)
 
 	// Build and call the interrupt caller
-	callInterrupt := s.factory.CallInterrupt(interrupt)
+	callInterrupt := callInterruptBuilder(interrupt)
 	s.Require().NotNil(callInterrupt)
 
 	// Result should have a size of 0 (since it is an opcode that modifies PC) and a clock of 16 ticks.
 	result := callInterrupt()
-	s.Equal(opcodeslib.OpcodeSuccess(1, 16), result)
+	s.Equal(opcodeslib.OpcodeSuccess(0, 16), result)
 
 	// Now PC is the interrupt's address, and SP has been offset.
 	s.Assert().Equal(interrupt.Addr(), s.Regs.PC)
@@ -31,11 +33,15 @@ func (s *unitTestSuite) callInterrupt(interrupt z80lib.Interrupt) {
 }
 
 func (s *unitTestSuite) TestCallInterrupt_ValidCallRst00() {
-	s.callInterrupt(z80lib.Rst00h)
+	s.callInterrupt(s.factory.CallInterrupt, z80lib.Rst00h, s.Regs.PC+1)
 }
 
 func (s *unitTestSuite) TestCallInterrupt_ValidCallRst38() {
-	s.callInterrupt(z80lib.Rst38h)
+	s.callInterrupt(s.factory.CallInterrupt, z80lib.Rst38h, s.Regs.PC+1)
+}
+
+func (s *unitTestSuite) TestCallInterruptInplace_ValidCallRst40() {
+	s.callInterrupt(s.factory.CallInterruptInplace, z80lib.Rst40h, s.Regs.PC)
 }
 
 func (s *unitTestSuite) TestCallInterrupt_InvalidWrite() {
@@ -53,7 +59,7 @@ func (s *unitTestSuite) TestCallInterrupt_InvalidWrite() {
 	s.Equal(opcodeslib.OpcodeError(testhelpers.ErrTesting1), result)
 }
 
-func (s *unitTestSuite) callConditionalFuncValid(fn func(registers.Flag) opcodeslib.Opcode, value, shouldCall bool) {
+func (s *unitTestSuite) callConditionalFuncValid(fn func(registerslib.Flag) opcodeslib.Opcode, value, shouldCall bool) {
 	addr := uint16(0x1234)
 
 	offsetSP := s.Regs.SP.Get() - 2
@@ -79,7 +85,7 @@ func (s *unitTestSuite) callConditionalFuncValid(fn func(registers.Flag) opcodes
 	result := callConditional()
 
 	if shouldCall {
-		s.Equal(opcodeslib.OpcodeSuccess(3, 24), result)
+		s.Equal(opcodeslib.OpcodeSuccess(0, 24), result)
 		s.Equal(addr, s.Regs.PC)
 	} else {
 		s.Equal(opcodeslib.OpcodeSuccess(3, 12), result)
@@ -87,7 +93,7 @@ func (s *unitTestSuite) callConditionalFuncValid(fn func(registers.Flag) opcodes
 	}
 }
 
-func (s *unitTestSuite) callConditionalAddressReadFailure(fn func(registers.Flag) opcodeslib.Opcode, value bool) {
+func (s *unitTestSuite) callConditionalAddressReadFailure(fn func(registerslib.Flag) opcodeslib.Opcode, value bool) {
 	addr := uint16(0x1234)
 	pc := s.Regs.PC
 
@@ -107,7 +113,7 @@ func (s *unitTestSuite) callConditionalAddressReadFailure(fn func(registers.Flag
 	s.Equal(opcodeslib.OpcodeError(testhelpers.ErrTesting1), result)
 }
 
-func (s *unitTestSuite) callConditionalAddressPushFailure(fn func(registers.Flag) opcodeslib.Opcode, value bool) {
+func (s *unitTestSuite) callConditionalAddressPushFailure(fn func(registerslib.Flag) opcodeslib.Opcode, value bool) {
 	addr := uint16(0x1234)
 
 	offsetSP := s.Regs.SP.Get() - 2
@@ -186,7 +192,7 @@ func (s *unitTestSuite) TestCall_ValidCase() {
 
 	result := call()
 
-	s.Equal(opcodeslib.OpcodeSuccess(3, 24), result)
+	s.Equal(opcodeslib.OpcodeSuccess(0, 24), result)
 	s.Equal(addr, s.Regs.PC)
 }
 

@@ -1,8 +1,8 @@
 package cb
 
 import (
-	"nebula-go/pkg/gbc/memory/registers"
 	lib2 "nebula-go/pkg/gbc/z80/opcodes/lib"
+	registerslib "nebula-go/pkg/gbc/z80/registers/lib"
 )
 
 func (f *Factory) testBit(value, bit uint8) {
@@ -14,7 +14,7 @@ func (f *Factory) testBit(value, bit uint8) {
 }
 
 func (f *Factory) TestBitInByte(bit uint8) cbbytefunc {
-	return func(reg registers.Byte) cbopcode {
+	return func(reg registerslib.Byte) cbopcode {
 		return func() lib2.OpcodeResult {
 			f.testBit(reg.Get(), bit)
 			return lib2.OpcodeSuccess(2, 8)
@@ -31,7 +31,10 @@ func (f *Factory) TestBitInHLPtr(bit uint8) cbhlptrfunc {
 			}
 
 			f.testBit(value, bit)
-			return lib2.OpcodeSuccess(2, 16)
+
+			// NOTE: Instruction timing ROM uses 12 cycles for this instruction, not 16 like
+			//  the opcode documentation indicates.
+			return lib2.OpcodeSuccess(2, 12)
 		}
 	}
 }

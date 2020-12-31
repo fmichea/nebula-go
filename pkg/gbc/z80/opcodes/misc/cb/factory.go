@@ -2,15 +2,15 @@ package cb
 
 import (
 	"nebula-go/pkg/gbc/memory"
-	z80lib "nebula-go/pkg/gbc/z80/lib"
+	"nebula-go/pkg/gbc/z80/registers"
 )
 
 type Factory struct {
 	mmu  memory.MMU
-	regs *z80lib.Registers
+	regs *registers.Registers
 }
 
-func NewFactory(mmu memory.MMU, regs *z80lib.Registers) *Factory {
+func NewFactory(mmu memory.MMU, regs *registers.Registers) *Factory {
 	return &Factory{
 		mmu:  mmu,
 		regs: regs,

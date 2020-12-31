@@ -1,103 +1,85 @@
 package mbcs
 
-import (
-	"nebula-go/pkg/gbc/memory/lib"
-)
-
 func (s *unitTestSuite) TestMBC1_ContainsAddr() {
 	s.testContainsAddress(s.mbc1)
 }
 
 func (s *unitTestSuite) TestMBC1_ROMRead() {
-	var err error
-	var ptr *uint8
+	value, err := s.mbc1.ReadByte(0x0000)
+	s.Require().NoError(err)
+	s.Equal(uint8(0), value)
 
-	ptr, err = s.mbc1.BytePtr(lib.AccessTypeRead, 0x0000, 0)
-	s.NoError(err)
-	s.NotNil(ptr)
-	s.Equal(uint8(0), *ptr)
-
-	ptr, err = s.mbc1.BytePtr(lib.AccessTypeRead, 0x4000, 0)
-	s.NoError(err)
-	s.NotNil(ptr)
-	s.Equal(uint8(1), *ptr)
+	value, err = s.mbc1.ReadByte(0x4000)
+	s.Require().NoError(err)
+	s.Equal(uint8(1), value)
 }
 
 func (s *unitTestSuite) TestMBC1_ERAMRead() {
-	var err error
-	var ptr *uint8
-
 	// Before RAM is enabled, read is not available.
-	s.Nil(s.mbc1.BytePtr(lib.AccessTypeRead, 0xA000, 0x00))
+	_, err := s.mbc1.ReadByte(0xA000)
+	s.Require().Equal(ErrRAMUnavailable, err)
 
 	// RAM enable.
-	_, err = s.mbc1.BytePtr(lib.AccessTypeWrite, 0x1FFF, 0x0A)
-	s.NoError(err)
+	err = s.mbc1.WriteByte(0x1FFF, 0x0A)
+	s.Require().NoError(err)
 
 	// Bank 0 read in ERAM.
-	ptr, err = s.mbc1.BytePtr(lib.AccessTypeRead, 0xA000, 0x00)
-	s.NoError(err)
-	s.NotNil(ptr)
-	s.Equal(uint8(0), *ptr)
+	value, err := s.mbc1.ReadByte(0xA000)
+	s.Require().NoError(err)
+	s.Equal(uint8(0), value)
 
 	// RAM disable.
-	_, err = s.mbc1.BytePtr(lib.AccessTypeWrite, 0x1FFF, 0x00)
-	s.NoError(err)
+	err = s.mbc1.WriteByte(0x1FFF, 0x00)
+	s.Require().NoError(err)
 
 	// RAM read is not available anymore.
-	ptr, err = s.mbc1.BytePtr(lib.AccessTypeRead, 0xA000, 0x00)
-	s.Equal(ErrRAMUnavailable, err)
-	s.Nil(ptr)
+	_, err = s.mbc1.ReadByte(0xA000)
+	s.Require().Equal(ErrRAMUnavailable, err)
 }
 
 func (s *unitTestSuite) TestMBC1_ERAMWrite() {
 	// Before RAM is enabled, read is not available.
-	s.Nil(s.mbc1.BytePtr(lib.AccessTypeWrite, 0xA000, 0))
+	err := s.mbc1.WriteByte(0xA000, 0)
+	s.Require().Equal(ErrRAMUnavailable, err)
 
 	// RAM enable.
-	_, err := s.mbc1.BytePtr(lib.AccessTypeWrite, 0x1FFF, 0x0A)
+	err = s.mbc1.WriteByte(0x1FFF, 0x0A)
 	s.NoError(err)
 
 	// Bank 0 read in ERAM.
-	ptr, err := s.mbc1.BytePtr(lib.AccessTypeWrite, 0xA000, 0)
+	err = s.mbc1.WriteByte(0xA000, 0xF)
 	s.NoError(err)
-	s.NotNil(ptr)
-	s.Equal(uint8(0), *ptr)
-	*ptr = 0x0F
 
-	ptr2, err := s.mbc1.BytePtr(lib.AccessTypeWrite, 0xA000, 0)
-	s.NoError(err)
-	s.Equal(ptr2, ptr)
-	s.Equal(uint8(0x0F), *ptr2)
+	value, err := s.mbc1.ReadByte(0xA000)
+	s.Require().NoError(err)
+	s.Equal(uint8(0x0F), value)
 
 	// RAM disable.
-	_, err = s.mbc1.BytePtr(lib.AccessTypeWrite, 0x1FFF, 0x00)
-	s.NoError(err)
+	err = s.mbc1.WriteByte(0x1FFF, 0x00)
+	s.Require().NoError(err)
 
 	// No access to RAM anymore.
-	s.Nil(s.mbc1.BytePtr(lib.AccessTypeWrite, 0xA000, 0))
+	err = s.mbc1.WriteByte(0xA000, 0)
+	s.Require().Equal(ErrRAMUnavailable, err)
 }
 
 func (s *unitTestSuite) TestMBC1_ROMBankSelect() {
 	selectLow := func(value uint8) {
 		// Write value in the rom bank select zone.
-		ptr, err := s.mbc1.BytePtr(lib.AccessTypeWrite, 0x2000, value)
-		s.NoError(err, "failed to select bank %#x (low bits)", value)
-		s.Nil(ptr)
+		err := s.mbc1.WriteByte(0x2000, value)
+		s.Require().NoError(err, "failed to select bank %#x (low bits)", value)
 	}
 
 	selectHigh := func(value uint8) {
-		ptr, err := s.mbc1.BytePtr(lib.AccessTypeWrite, 0x4000, value)
-		s.NoError(err, "failed to select bank %#x (high bits)", value)
-		s.Nil(ptr)
+		err := s.mbc1.WriteByte(0x4000, value)
+		s.Require().NoError(err, "failed to select bank %#x (high bits)", value)
 	}
 
 	checkBankSelected := func(expectedBank uint8) {
 		// Now check the expected bank was selected.
-		ptr, err := s.mbc1.BytePtr(lib.AccessTypeRead, 0x4000, 0)
-		s.NoError(err)
-		s.NotNil(ptr)
-		s.Equal(expectedBank, *ptr)
+		value, err := s.mbc1.ReadByte(0x4000)
+		s.Require().NoError(err)
+		s.Equal(expectedBank, value)
 	}
 
 	// Trying to select bank 0 translates selection to bank 1.
@@ -129,24 +111,22 @@ func (s *unitTestSuite) TestMBC1_ROMBankSelect() {
 
 func (s *unitTestSuite) TestMBC1_RAMBankSelect() {
 	// Enable RAM and set banking mode to RAM banking.
-	_, err := s.mbc1.BytePtr(lib.AccessTypeWrite, 0x0000, 0x0A)
-	s.NoError(err)
+	err := s.mbc1.WriteByte(0x0000, 0x0A)
+	s.Require().NoError(err)
 
-	_, err = s.mbc1.BytePtr(lib.AccessTypeWrite, 0x6000, 0x01)
-	s.NoError(err)
+	err = s.mbc1.WriteByte(0x6000, 0x01)
+	s.Require().NoError(err)
 
 	selectBank := func(value uint8) {
-		ptr, err := s.mbc1.BytePtr(lib.AccessTypeWrite, 0x4000, value)
-		s.NoError(err, "failed to select bank %#x", value)
-		s.Nil(ptr)
+		err := s.mbc1.WriteByte(0x4000, value)
+		s.Require().NoError(err, "failed to select bank %#x", value)
 	}
 
 	checkBank := func(expectedBank uint8) {
 		// Now check the expected bank was selected.
-		ptr, err := s.mbc1.BytePtr(lib.AccessTypeRead, 0xB000, 0)
-		s.NoError(err)
-		s.NotNil(ptr)
-		s.Equal(expectedBank, *ptr)
+		value, err := s.mbc1.ReadByte(0xB000)
+		s.Require().NoError(err)
+		s.Equal(expectedBank, value)
 	}
 
 	values := map[uint8]uint8{
@@ -164,56 +144,50 @@ func (s *unitTestSuite) TestMBC1_RAMBankSelect() {
 
 func (s *unitTestSuite) TestMBC1_SwitchingBetweenRAMAndROMBanking() {
 	// Enable RAM and set banking mode to RAM banking.
-	_, err := s.mbc1.BytePtr(lib.AccessTypeWrite, 0x0000, 0x0A)
-	s.NoError(err)
+	err := s.mbc1.WriteByte(0x0000, 0x0A)
+	s.Require().NoError(err)
 
 	// Select the highest bank we can in ROM: 0x7F
-	_, err = s.mbc1.BytePtr(lib.AccessTypeWrite, 0x2000, 0xFF)
-	s.NoError(err)
+	err = s.mbc1.WriteByte(0x2000, 0xFF)
+	s.Require().NoError(err)
 
-	_, err = s.mbc1.BytePtr(lib.AccessTypeWrite, 0x4000, 0xFF)
-	s.NoError(err)
+	err = s.mbc1.WriteByte(0x4000, 0xFF)
+	s.Require().NoError(err)
 
 	// Ensure the bank got selected correctly.
-	ptr, err := s.mbc1.BytePtr(lib.AccessTypeRead, 0x4000, 0)
-	s.NoError(err)
-	s.NotNil(ptr)
-	s.Equal(uint8(0x7F), *ptr)
+	value, err := s.mbc1.ReadByte(0x4000)
+	s.Require().NoError(err)
+	s.Equal(uint8(0x7F), value)
 
-	ptr, err = s.mbc1.BytePtr(lib.AccessTypeRead, 0xA000, 0)
-	s.NoError(err)
-	s.NotNil(ptr)
-	s.Equal(uint8(0x00), *ptr)
+	value, err = s.mbc1.ReadByte(0xA000)
+	s.Require().NoError(err)
+	s.Equal(uint8(0x00), value)
 
 	// Now switch to RAM banking, which should reduce to bank 0x1F at most.
-	_, err = s.mbc1.BytePtr(lib.AccessTypeWrite, 0x6000, 0x01)
-	s.NoError(err)
+	err = s.mbc1.WriteByte(0x6000, 0x01)
+	s.Require().NoError(err)
 
 	// Selected ROM bank is 0x1F!
-	ptr, err = s.mbc1.BytePtr(lib.AccessTypeRead, 0x4000, 0)
-	s.NoError(err)
-	s.NotNil(ptr)
-	s.Equal(uint8(0x1F), *ptr)
+	value, err = s.mbc1.ReadByte(0x4000)
+	s.Require().NoError(err)
+	s.Equal(uint8(0x1F), value)
 
 	// RAM selected bank is now 3.
-	ptr, err = s.mbc1.BytePtr(lib.AccessTypeRead, 0xA000, 0)
-	s.NoError(err)
-	s.NotNil(ptr)
-	s.Equal(uint8(0x03), *ptr)
+	value, err = s.mbc1.ReadByte(0xA000)
+	s.Require().NoError(err)
+	s.Equal(uint8(0x03), value)
 
 	// Going back to ROM banking switches back the selector.
-	_, err = s.mbc1.BytePtr(lib.AccessTypeWrite, 0x6000, 0x00)
-	s.NoError(err)
+	err = s.mbc1.WriteByte(0x6000, 0x00)
+	s.Require().NoError(err)
 
 	// Selected ROM bank is back to 0x7F.
-	ptr, err = s.mbc1.BytePtr(lib.AccessTypeRead, 0x4000, 0)
+	value, err = s.mbc1.ReadByte(0x4000)
 	s.NoError(err)
-	s.NotNil(ptr)
-	s.Equal(uint8(0x7F), *ptr)
+	s.Equal(uint8(0x7F), value)
 
 	// RAM selected bank is now 0.
-	ptr, err = s.mbc1.BytePtr(lib.AccessTypeRead, 0xA000, 0)
-	s.NoError(err)
-	s.NotNil(ptr)
-	s.Equal(uint8(0x00), *ptr)
+	value, err = s.mbc1.ReadByte(0xA000)
+	s.Require().NoError(err)
+	s.Equal(uint8(0x00), value)
 }

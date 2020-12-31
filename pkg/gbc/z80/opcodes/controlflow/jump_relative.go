@@ -2,12 +2,12 @@ package controlflow
 
 import (
 	"nebula-go/pkg/gbc/memory"
-	"nebula-go/pkg/gbc/memory/registers"
-	z80lib "nebula-go/pkg/gbc/z80/lib"
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	"nebula-go/pkg/gbc/z80/registers"
+	registerslib "nebula-go/pkg/gbc/z80/registers/lib"
 )
 
-func jumpRelativeIf(mmu memory.MMU, regs *z80lib.Registers, cond bool) opcodeslib.OpcodeResult {
+func jumpRelativeIf(mmu memory.MMU, regs *registers.Registers, cond bool) opcodeslib.OpcodeResult {
 	if cond {
 		value, err := mmu.ReadByte(regs.PC + 1)
 		if err != nil {
@@ -21,13 +21,13 @@ func jumpRelativeIf(mmu memory.MMU, regs *z80lib.Registers, cond bool) opcodesli
 	return opcodeslib.OpcodeSuccess(2, 8)
 }
 
-func (f *Factory) JumpRelativeIf(flag registers.Flag) opcodeslib.Opcode {
+func (f *Factory) JumpRelativeIf(flag registerslib.Flag) opcodeslib.Opcode {
 	return func() opcodeslib.OpcodeResult {
 		return jumpRelativeIf(f.mmu, f.regs, flag.GetBool())
 	}
 }
 
-func (f *Factory) JumpRelativeIfNot(flag registers.Flag) opcodeslib.Opcode {
+func (f *Factory) JumpRelativeIfNot(flag registerslib.Flag) opcodeslib.Opcode {
 	return func() opcodeslib.OpcodeResult {
 		return jumpRelativeIf(f.mmu, f.regs, !flag.GetBool())
 	}

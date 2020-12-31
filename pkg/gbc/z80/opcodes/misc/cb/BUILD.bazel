@@ -23,9 +23,9 @@ go_library(
     deps = [
         "//pkg/common/bitwise:go_default_library",
         "//pkg/gbc/memory:go_default_library",
-        "//pkg/gbc/memory/registers:go_default_library",
-        "//pkg/gbc/z80/lib:go_default_library",
         "//pkg/gbc/z80/opcodes/lib:go_default_library",
+        "//pkg/gbc/z80/registers:go_default_library",
+        "//pkg/gbc/z80/registers/lib:go_default_library",
     ],
 )
 
@@ -50,9 +50,9 @@ go_test(
     deps = [
         "//pkg/common/testhelpers:go_default_library",
         "//pkg/gbc/memory:go_default_library",
-        "//pkg/gbc/memory/registers:go_default_library",
-        "//pkg/gbc/z80/lib:go_default_library",
         "//pkg/gbc/z80/opcodes/lib:go_default_library",
         "//pkg/gbc/z80/opcodes/testhelpers:go_default_library",
+        "//pkg/gbc/z80/registers:go_default_library",
+        "//pkg/gbc/z80/registers/lib:go_default_library",
     ],
 )

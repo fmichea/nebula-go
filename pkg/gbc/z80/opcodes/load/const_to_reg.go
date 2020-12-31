@@ -1,11 +1,11 @@
 package load
 
 import (
-	"nebula-go/pkg/gbc/memory/registers"
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	registerslib "nebula-go/pkg/gbc/z80/registers/lib"
 )
 
-func (f *Factory) ConstToByte(reg registers.Byte) opcodeslib.Opcode {
+func (f *Factory) ConstToByte(reg registerslib.Byte) opcodeslib.Opcode {
 	return func() opcodeslib.OpcodeResult {
 		value, err := f.mmu.ReadByte(f.regs.PC + 1)
 		if err != nil {
@@ -16,7 +16,7 @@ func (f *Factory) ConstToByte(reg registers.Byte) opcodeslib.Opcode {
 	}
 }
 
-func (f *Factory) ConstToDByte(reg registers.DByte) opcodeslib.Opcode {
+func (f *Factory) ConstToDByte(reg registerslib.DByte) opcodeslib.Opcode {
 	return func() opcodeslib.OpcodeResult {
 		value, err := f.mmu.ReadDByte(f.regs.PC + 1)
 		if err != nil {

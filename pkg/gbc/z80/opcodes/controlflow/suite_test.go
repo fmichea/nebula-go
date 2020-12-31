@@ -2,8 +2,9 @@ package controlflow
 
 import (
 	"nebula-go/pkg/gbc/memory"
-	z80lib "nebula-go/pkg/gbc/z80/lib"
 	"nebula-go/pkg/gbc/z80/opcodes/testhelpers"
+	"nebula-go/pkg/gbc/z80/registers"
+
 	"testing"
 )
 
@@ -13,7 +14,7 @@ type unitTestSuite struct {
 	factory *Factory
 }
 
-func (s *unitTestSuite) SetupTestFactory(mmu memory.MMU, regs *z80lib.Registers) {
+func (s *unitTestSuite) SetupTestFactory(mmu memory.MMU, regs *registers.Registers) {
 	s.factory = NewFactory(mmu, regs)
 }
 

@@ -1,8 +1,8 @@
 package load
 
 import (
-	"nebula-go/pkg/gbc/memory/registers"
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	registerslib "nebula-go/pkg/gbc/z80/registers/lib"
 )
 
 func (f *Factory) loadAToAddress(addr uint16) error {
@@ -12,7 +12,7 @@ func (f *Factory) loadAToAddress(addr uint16) error {
 	return nil
 }
 
-func (f *Factory) aToDBytePtr(reg registers.DByte) opcodeslib.Opcode {
+func (f *Factory) aToDBytePtr(reg registerslib.DByte) opcodeslib.Opcode {
 	return func() opcodeslib.OpcodeResult {
 		if err := f.loadAToAddress(reg.Get()); err != nil {
 			return opcodeslib.OpcodeError(err)

@@ -1,8 +1,8 @@
 package alu
 
 import (
-	"nebula-go/pkg/gbc/memory/registers"
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	registerslib "nebula-go/pkg/gbc/z80/registers/lib"
 )
 
 func (f *Factory) xorConstToA(cst uint8) {
@@ -14,7 +14,7 @@ func (f *Factory) xorConstToA(cst uint8) {
 	f.regs.F.ZF.SetBool(value == 0)
 }
 
-func (f *Factory) XorByteToA(reg registers.Byte) opcodeslib.Opcode {
+func (f *Factory) XorByteToA(reg registerslib.Byte) opcodeslib.Opcode {
 	return func() opcodeslib.OpcodeResult {
 		f.xorConstToA(reg.Get())
 		return opcodeslib.OpcodeSuccess(1, 4)

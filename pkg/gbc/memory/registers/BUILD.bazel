@@ -3,25 +3,101 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "go_default_library",
     srcs = [
-        "bit_proxy.go",
-        "byte.go",
-        "dbyte.go",
-        "dbyte_split_byte.go",
-        "flag.go",
+        "cgb_palette_index.go",
+        "cgb_palette_reg.go",
+        "div_reg.go",
+        "dma_reg.go",
+        "dmg_palette_color_shade.go",
+        "dmg_palette_reg.go",
+        "hdma_regs.go",
+        "interrupt_flag.go",
+        "interrupt_reg.go",
+        "joyp_reg.go",
+        "key1_reg.go",
+        "lcdc_reg.go",
+        "obj_size_flag.go",
+        "stat_mode_bit_proxy.go",
+        "stat_modes.go",
+        "stat_reg.go",
+        "stat_timer.go",
+        "tac_reg.go",
+        "tds_flag.go",
+        "tima_reg.go",
+        "tma_reg.go",
+        "tmds_flag.go",
+        "vbk_reg.go",
     ],
     importpath = "nebula-go/pkg/gbc/memory/registers",
     visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/common/bitwise:go_default_library",
+        "//pkg/common/frontends:go_default_library",
+        "//pkg/gbc/memory/cartridge:go_default_library",
+        "//pkg/gbc/memory/lib:go_default_library",
+        "//pkg/gbc/memory/registers/lib:go_default_library",
+        "//pkg/gbc/memory/segments:go_default_library",
+    ],
 )
 
 go_test(
     name = "go_default_test",
     srcs = [
-        "bit_proxy_test.go",
-        "byte_test.go",
-        "dbyte_split_byte_test.go",
-        "dbyte_test.go",
-        "flag_test.go",
+        "cgb_palette_index_test.go",
+        "cgb_palette_reg_test.go",
+        "div_reg_test.go",
+        "dmg_palette_color_shade_test.go",
+        "dmg_palette_reg_test.go",
+        "hdma_regs_test.go",
+        "interrupt_reg_test.go",
+        "joyp_reg_test.go",
+        "key1_reg_test.go",
+        "lcdc_reg_test.go",
+        "obj_size_flag_test.go",
+        "stat_mode_bit_proxy_test.go",
+        "stat_reg_test.go",
+        "stat_timer_test.go",
+        "tds_flag_test.go",
+        "tmds_flag_test.go",
+        "vbk_reg_test.go",
     ],
     embed = [":go_default_library"],
-    deps = ["@com_github_stretchr_testify//assert:go_default_library"],
+    deps = [
+        "//pkg/common/frontends:go_default_library",
+        "//pkg/common/testhelpers:go_default_library",
+        "//pkg/gbc/memory/cartridge:go_default_library",
+        "//pkg/gbc/memory/lib:go_default_library",
+        "//pkg/gbc/memory/lib:go_mocks_library",
+        "//pkg/gbc/memory/registers/lib:go_default_library",
+        "//pkg/gbc/memory/segments:go_mocks_library",
+        "@com_github_golang_mock//gomock:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)
+
+##############################################################################
+# This code is generated, do not edit go_mocks_library or gomock manually, use
+# ./tools/generate-bazel-mocks-code.sh to generate.
+load("@com_github_jmhodges_bazel_gomock//:gomock.bzl", "gomock")
+
+go_library(
+    name = "go_mocks_library",
+    srcs = ["registers_mocks.go"],
+    importpath = "nebula-go/mocks/pkg/gbc/memory/registersmocks",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":go_default_library",
+        "@com_github_golang_mock//gomock:go_default_library",
+    ],
+)
+
+# gazelle:exclude registers_mocks.go
+gomock(
+    name = "mocks",
+    out = "registers_mocks.go",
+    interfaces = [
+        "HDMA5Reg",
+    ],
+    library = "//pkg/gbc/memory/registers:go_default_library",
+    package = "registersmocks",
 )

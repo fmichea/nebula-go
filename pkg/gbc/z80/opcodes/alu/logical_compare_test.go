@@ -2,35 +2,36 @@ package alu
 
 import (
 	"fmt"
+
 	"nebula-go/pkg/common/testhelpers"
-	"nebula-go/pkg/gbc/memory/registers"
-	z80lib "nebula-go/pkg/gbc/z80/lib"
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	"nebula-go/pkg/gbc/z80/registers"
+	registerslib "nebula-go/pkg/gbc/z80/registers/lib"
 )
 
 // These tests are the same as substract tests, but the the result value is never changed.
 var _compareTestCases = []aOpTestCase{
 	// Nothing substracted, result is 0.
-	{0x00, 0x00, 0x00, z80lib.FlagsCleared, z80lib.ZF | z80lib.NE},
-	{0xFF, 0xFF, 0xFF, z80lib.FlagsFullSet, z80lib.ZF | z80lib.NE},
+	{0x00, 0x00, 0x00, registers.FlagsCleared, registers.ZF | registers.NE},
+	{0xFF, 0xFF, 0xFF, registers.FlagsFullSet, registers.ZF | registers.NE},
 	// Value and carry substract to 0.
-	{0x03, 0x02, 0x03, z80lib.FlagsFullSet, z80lib.NE},
+	{0x03, 0x02, 0x03, registers.FlagsFullSet, registers.NE},
 	// Carry borrows only on bit 4, no CY in result.
-	{0x22, 0x03, 0x22, z80lib.FlagsCleared, z80lib.NE | z80lib.HC},
+	{0x22, 0x03, 0x22, registers.FlagsCleared, registers.NE | registers.HC},
 	// Carry borrows only on bit 4, no CY in result.
-	{0x22, 0x03, 0x22, z80lib.FlagsFullSet, z80lib.NE | z80lib.HC},
+	{0x22, 0x03, 0x22, registers.FlagsFullSet, registers.NE | registers.HC},
 	// Carry borrows only on bit 4, no CY in result, case were bit 4 is not set in result.
-	{0x82, 0x03, 0x82, z80lib.FlagsCleared, z80lib.NE | z80lib.HC},
+	{0x82, 0x03, 0x82, registers.FlagsCleared, registers.NE | registers.HC},
 	// Complete borrow.
-	{0x00, 0x0F, 0x00, z80lib.FlagsCleared, z80lib.NE | z80lib.HC | z80lib.CY},
+	{0x00, 0x0F, 0x00, registers.FlagsCleared, registers.NE | registers.HC | registers.CY},
 	// No borrow, not zero.
-	{0x02, 0x00, 0x02, z80lib.FlagsFullSet, z80lib.NE},
+	{0x02, 0x00, 0x02, registers.FlagsFullSet, registers.NE},
 	// No borrow, not zero.
-	{0x02, 0x01, 0x02, z80lib.FlagsCleared, z80lib.NE},
+	{0x02, 0x01, 0x02, registers.FlagsCleared, registers.NE},
 }
 
 func (s *unitTestSuite) TestCompareByteToA() {
-	reg := registers.NewByte(0x00)
+	reg := registerslib.NewByte(0x00)
 	fn := s.factory.CompareByteToA(reg)
 
 	for _, c := range _compareTestCases {

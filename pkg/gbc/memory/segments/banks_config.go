@@ -1,8 +1,8 @@
 package segments
 
 type banksConfig struct {
-	segmentAddressRange addressRange
-	bankedAddressRange  addressRange
+	segmentAddressRange AddressRange
+	bankedAddressRange  AddressRange
 
 	current uint
 	count   uint
@@ -12,13 +12,13 @@ type banksConfig struct {
 
 func newBanksConfig(startAddr, endAddr uint16) banksConfig {
 	return banksConfig{
-		segmentAddressRange: addressRange{
-			start: startAddr,
-			end:   endAddr,
+		segmentAddressRange: AddressRange{
+			Start: startAddr,
+			End:   endAddr,
 		},
-		bankedAddressRange: addressRange{
-			start: startAddr,
-			end:   endAddr,
+		bankedAddressRange: AddressRange{
+			Start: startAddr,
+			End:   endAddr,
 		},
 
 		current: 0,
@@ -41,11 +41,11 @@ func (c *banksConfig) makeBank0Pinned() {
 	c.bank0Pinned = true
 
 	// Move banks to the second half of the segment address range.
-	c.bankedAddressRange.start = c.segmentAddressRange.start
-	c.bankedAddressRange.start += c.segmentAddressRange.size() / 2
+	c.bankedAddressRange.Start = c.segmentAddressRange.Start
+	c.bankedAddressRange.Start += uint16(c.segmentAddressRange.size()) / 2
 }
 
-func (c *banksConfig) asOffset(addr uint16) uint16 {
+func (c *banksConfig) asOffset(addr uint16) uint {
 	return c.bankedAddressRange.asOffset(addr)
 }
 
@@ -53,11 +53,18 @@ func (c *banksConfig) containsAddress(addr uint16) bool {
 	return c.bankedAddressRange.containsAddress(addr)
 }
 
-func (c *banksConfig) sizePerBank() uint {
-	return uint(c.bankedAddressRange.size())
+func (c *banksConfig) isBanked(addr uint16) bool {
+	if c.bank0Pinned {
+		return c.count != 2 && c.bankedAddressRange.containsAddress(addr)
+	}
+	return c.count != 1
 }
 
-func (c *banksConfig) initializeAndValidate() error {
+func (c *banksConfig) sizePerBank() uint {
+	return c.bankedAddressRange.size()
+}
+
+func (c *banksConfig) validateAndInitialize() error {
 	if c.bank0Pinned && c.count == 1 {
 		return ErrCannotPin0WithOneBank
 	}
@@ -71,7 +78,11 @@ func (c *banksConfig) initializeAndValidate() error {
 }
 
 func (c *banksConfig) selectBank(bank uint) error {
-	if c.count <= bank || (bank == 0 && c.bank0Pinned) {
+	if bank == 0 && c.bank0Pinned {
+		bank = 1
+	}
+
+	if c.count <= bank /* || (bank == 0 && c.bank0Pinned) */ {
 		return ErrBankUnavailable
 	}
 

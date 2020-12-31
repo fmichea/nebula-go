@@ -11,7 +11,7 @@ import (
 func TestBanksConfig(t *testing.T) {
 	t.Run("default is one bank, bank 0 selected, unpinned", func(t *testing.T) {
 		bc := newBanksConfig(0x100, 0x1FF)
-		require.NoError(t, bc.initializeAndValidate())
+		require.NoError(t, bc.validateAndInitialize())
 
 		t.Run("basic configuration", func(t *testing.T) {
 			assert.Equal(t, bc.segmentAddressRange, bc.bankedAddressRange)
@@ -32,12 +32,17 @@ func TestBanksConfig(t *testing.T) {
 		})
 
 		t.Run("asOffset uses the beginning of whole segment", func(t *testing.T) {
-			assert.Equal(t, uint16(0x10), bc.asOffset(0x110))
-			assert.Equal(t, uint16(0x18), bc.asOffset(0x118))
+			assert.Equal(t, uint(0x10), bc.asOffset(0x110))
+			assert.Equal(t, uint(0x18), bc.asOffset(0x118))
 		})
 
 		t.Run("cannot select bank outside of bounds", func(t *testing.T) {
 			assert.Equal(t, ErrBankUnavailable, bc.selectBank(123))
+		})
+
+		t.Run("is address banked", func(t *testing.T) {
+			assert.False(t, bc.isBanked(0x100))
+			assert.False(t, bc.isBanked(0x1FF))
 		})
 	})
 
@@ -45,7 +50,7 @@ func TestBanksConfig(t *testing.T) {
 		bc := newBanksConfig(0x100, 0x1FF)
 		bc.makeBank0Pinned()
 
-		assert.Equal(t, ErrCannotPin0WithOneBank, bc.initializeAndValidate())
+		assert.Equal(t, ErrCannotPin0WithOneBank, bc.validateAndInitialize())
 	})
 
 	t.Run("cannot set bank count to 0", func(t *testing.T) {
@@ -56,7 +61,7 @@ func TestBanksConfig(t *testing.T) {
 	t.Run("with a few banks, no pinning", func(t *testing.T) {
 		bc := newBanksConfig(0x100, 0x1FF)
 		require.NoError(t, bc.setBankCount(5))
-		require.NoError(t, bc.initializeAndValidate())
+		require.NoError(t, bc.validateAndInitialize())
 
 		t.Run("basic configuration", func(t *testing.T) {
 			assert.Equal(t, bc.segmentAddressRange, bc.bankedAddressRange)
@@ -76,6 +81,11 @@ func TestBanksConfig(t *testing.T) {
 			assert.NoError(t, bc.selectBank(2))
 			assert.Equal(t, uint(2), bc.current)
 		})
+
+		t.Run("is address banked", func(t *testing.T) {
+			assert.True(t, bc.isBanked(0x100))
+			assert.True(t, bc.isBanked(0x1FF))
+		})
 	})
 
 	t.Run("bank 0 pinned halves the banking zone", func(t *testing.T) {
@@ -83,7 +93,7 @@ func TestBanksConfig(t *testing.T) {
 		require.NoError(t, bc.setBankCount(5))
 		bc.makeBank0Pinned()
 
-		require.NoError(t, bc.initializeAndValidate())
+		require.NoError(t, bc.validateAndInitialize())
 
 		t.Run("basic configuration", func(t *testing.T) {
 			assert.NotEqual(t, bc.segmentAddressRange, bc.bankedAddressRange)
@@ -105,12 +115,18 @@ func TestBanksConfig(t *testing.T) {
 		})
 
 		t.Run("offset starts at second half", func(t *testing.T) {
-			assert.Equal(t, uint16(0x10), bc.asOffset(0x190))
-			assert.Equal(t, uint16(0x20), bc.asOffset(0x1A0))
+			assert.Equal(t, uint(0x10), bc.asOffset(0x190))
+			assert.Equal(t, uint(0x20), bc.asOffset(0x1A0))
 		})
 
-		t.Run("cannot select bank 0", func(t *testing.T) {
-			assert.Equal(t, ErrBankUnavailable, bc.selectBank(0))
+		t.Run("selecting bank 0 actually selects 1", func(t *testing.T) {
+			assert.NoError(t, bc.selectBank(0))
+			assert.Equal(t, uint(1), bc.current)
+		})
+
+		t.Run("is address banked", func(t *testing.T) {
+			assert.False(t, bc.isBanked(0x100))
+			assert.True(t, bc.isBanked(0x1FF))
 		})
 	})
 }

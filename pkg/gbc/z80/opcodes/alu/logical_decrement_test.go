@@ -2,10 +2,11 @@ package alu
 
 import (
 	"fmt"
+
 	"nebula-go/pkg/common/testhelpers"
-	"nebula-go/pkg/gbc/memory/registers"
-	z80lib "nebula-go/pkg/gbc/z80/lib"
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	"nebula-go/pkg/gbc/z80/registers"
+	registerslib "nebula-go/pkg/gbc/z80/registers/lib"
 )
 
 func (s *unitTestSuite) TestDecrementByte() {
@@ -15,19 +16,19 @@ func (s *unitTestSuite) TestDecrementByte() {
 		initialFlags uint8
 		resultFlags  uint8
 	}{
-		{0x01, 0x00, z80lib.FlagsCleared, z80lib.ZF},
-		{0x01, 0x00, z80lib.FlagsFullSet, z80lib.ZF | z80lib.CY},
-		{0x02, 0x01, z80lib.FlagsCleared, z80lib.FlagsCleared},
-		{0x02, 0x01, z80lib.FlagsFullSet, z80lib.CY},
-		{0x10, 0x0F, z80lib.FlagsCleared, z80lib.HC},
-		{0x10, 0x0F, z80lib.FlagsFullSet, z80lib.HC | z80lib.CY},
-		{0x40, 0x3F, z80lib.FlagsCleared, z80lib.HC},
-		{0x40, 0x3F, z80lib.FlagsFullSet, z80lib.HC | z80lib.CY},
-		{0x00, 0xFF, z80lib.FlagsCleared, z80lib.HC},
-		{0x00, 0xFF, z80lib.FlagsFullSet, z80lib.HC | z80lib.CY},
+		{0x01, 0x00, registers.FlagsCleared, registers.ZF},
+		{0x01, 0x00, registers.FlagsFullSet, registers.ZF | registers.CY},
+		{0x02, 0x01, registers.FlagsCleared, registers.FlagsCleared},
+		{0x02, 0x01, registers.FlagsFullSet, registers.CY},
+		{0x10, 0x0F, registers.FlagsCleared, registers.HC},
+		{0x10, 0x0F, registers.FlagsFullSet, registers.HC | registers.CY},
+		{0x40, 0x3F, registers.FlagsCleared, registers.HC},
+		{0x40, 0x3F, registers.FlagsFullSet, registers.HC | registers.CY},
+		{0x00, 0xFF, registers.FlagsCleared, registers.HC},
+		{0x00, 0xFF, registers.FlagsFullSet, registers.HC | registers.CY},
 	}
 
-	reg := registers.NewByte(0x00)
+	reg := registerslib.NewByte(0x00)
 	fn := s.factory.DecrementByte(reg)
 
 	for _, c := range cases {
@@ -41,7 +42,7 @@ func (s *unitTestSuite) TestDecrementByte() {
 
 			s.Equal(opcodeslib.OpcodeSuccess(1, 4), result)
 			s.Equal(c.result, reg.Get())
-			s.EqualFlags(c.resultFlags | z80lib.NE)
+			s.EqualFlags(c.resultFlags | registers.NE)
 		})
 	}
 }
@@ -52,19 +53,19 @@ func (s *unitTestSuite) TestDecrementDByte() {
 		result       uint16
 		flags        uint8
 	}{
-		{0x0002, 0x0001, z80lib.FlagsCleared},
-		{0x0002, 0x0001, z80lib.FlagsFullSet},
-		{0x0010, 0x000F, z80lib.FlagsCleared},
-		{0x0010, 0x000F, z80lib.FlagsFullSet},
-		{0x0300, 0x02FF, z80lib.FlagsCleared},
-		{0x0300, 0x02FF, z80lib.FlagsFullSet},
-		{0xA000, 0x9FFF, z80lib.FlagsCleared},
-		{0xA000, 0x9FFF, z80lib.FlagsFullSet},
-		{0x0000, 0xFFFF, z80lib.FlagsCleared},
-		{0x0000, 0xFFFF, z80lib.FlagsFullSet},
+		{0x0002, 0x0001, registers.FlagsCleared},
+		{0x0002, 0x0001, registers.FlagsFullSet},
+		{0x0010, 0x000F, registers.FlagsCleared},
+		{0x0010, 0x000F, registers.FlagsFullSet},
+		{0x0300, 0x02FF, registers.FlagsCleared},
+		{0x0300, 0x02FF, registers.FlagsFullSet},
+		{0xA000, 0x9FFF, registers.FlagsCleared},
+		{0xA000, 0x9FFF, registers.FlagsFullSet},
+		{0x0000, 0xFFFF, registers.FlagsCleared},
+		{0x0000, 0xFFFF, registers.FlagsFullSet},
 	}
 
-	reg := registers.NewDByte(0x0000)
+	reg := registerslib.NewDByte(0x0000)
 	fn := s.factory.DecrementDByte(reg)
 
 	for _, c := range cases {
@@ -90,16 +91,16 @@ func (s *unitTestSuite) TestDecrementHLPtr() {
 		initialFlags uint8
 		resultFlags  uint8
 	}{
-		{0x01, 0x00, z80lib.FlagsCleared, z80lib.ZF},
-		{0x01, 0x00, z80lib.FlagsFullSet, z80lib.ZF | z80lib.CY},
-		{0x02, 0x01, z80lib.FlagsCleared, z80lib.FlagsCleared},
-		{0x02, 0x01, z80lib.FlagsFullSet, z80lib.CY},
-		{0x10, 0x0F, z80lib.FlagsCleared, z80lib.HC},
-		{0x10, 0x0F, z80lib.FlagsFullSet, z80lib.HC | z80lib.CY},
-		{0x40, 0x3F, z80lib.FlagsCleared, z80lib.HC},
-		{0x40, 0x3F, z80lib.FlagsFullSet, z80lib.HC | z80lib.CY},
-		{0x00, 0xFF, z80lib.FlagsCleared, z80lib.HC},
-		{0x00, 0xFF, z80lib.FlagsFullSet, z80lib.HC | z80lib.CY},
+		{0x01, 0x00, registers.FlagsCleared, registers.ZF},
+		{0x01, 0x00, registers.FlagsFullSet, registers.ZF | registers.CY},
+		{0x02, 0x01, registers.FlagsCleared, registers.FlagsCleared},
+		{0x02, 0x01, registers.FlagsFullSet, registers.CY},
+		{0x10, 0x0F, registers.FlagsCleared, registers.HC},
+		{0x10, 0x0F, registers.FlagsFullSet, registers.HC | registers.CY},
+		{0x40, 0x3F, registers.FlagsCleared, registers.HC},
+		{0x40, 0x3F, registers.FlagsFullSet, registers.HC | registers.CY},
+		{0x00, 0xFF, registers.FlagsCleared, registers.HC},
+		{0x00, 0xFF, registers.FlagsFullSet, registers.HC | registers.CY},
 	}
 
 	fn := s.factory.DecrementHLPtr()
@@ -116,7 +117,7 @@ func (s *unitTestSuite) TestDecrementHLPtr() {
 			result := fn()
 
 			s.Equal(opcodeslib.OpcodeSuccess(1, 12), result)
-			s.EqualFlags(c.resultFlags | z80lib.NE)
+			s.EqualFlags(c.resultFlags | registers.NE)
 		})
 	}
 }

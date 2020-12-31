@@ -1,0 +1,92 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "bgw_tile.go",
+        "cgb_tile.go",
+        "dmg_tile.go",
+        "gpu.go",
+        "gpu_cycles.go",
+        "gpu_draw_line.go",
+        "load_sprites_for_line.go",
+        "pacer.go",
+        "tile.go",
+        "tile_attributes.go",
+    ],
+    importpath = "nebula-go/pkg/gbc/graphics",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/common/bitfields:go_default_library",
+        "//pkg/common/bitwise:go_default_library",
+        "//pkg/common/clock:go_default_library",
+        "//pkg/common/frontends:go_default_library",
+        "//pkg/gbc/graphics/lib:go_default_library",
+        "//pkg/gbc/memory:go_default_library",
+        "//pkg/gbc/memory/cartridge:go_default_library",
+        "//pkg/gbc/memory/registers:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "bgw_tile_test.go",
+        "cgb_tile_test.go",
+        "dmg_tile_test.go",
+        "gpu_cycles_test.go",
+        "gpu_draw_line_test.go",
+        "gpu_test.go",
+        "load_sprites_for_line_test.go",
+        "pacer_test.go",
+        "suite_test.go",
+        "tile_attributes_test.go",
+        "tile_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//pkg/common/clock:go_mocks_library",
+        "//pkg/common/frontends:go_default_library",
+        "//pkg/common/frontends:go_mocks_library",
+        "//pkg/common/testhelpers:go_default_library",
+        "//pkg/gbc/graphics/lib:go_default_library",
+        "//pkg/gbc/memory:go_default_library",
+        "//pkg/gbc/memory:go_mocks_library",
+        "//pkg/gbc/memory/cartridge:go_default_library",
+        "//pkg/gbc/memory/lib:go_default_library",
+        "//pkg/gbc/memory/registers:go_default_library",
+        "//pkg/gbc/memory/registers:go_mocks_library",
+        "//pkg/gbc/memory/segments:go_mocks_library",
+        "@com_github_golang_mock//gomock:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+        "@com_github_stretchr_testify//suite:go_default_library",
+    ],
+)
+
+##############################################################################
+# This code is generated, do not edit go_mocks_library or gomock manually, use
+# ./tools/generate-bazel-mocks-code.sh to generate.
+load("@com_github_jmhodges_bazel_gomock//:gomock.bzl", "gomock")
+
+go_library(
+    name = "go_mocks_library",
+    srcs = ["graphics_mocks.go"],
+    importpath = "nebula-go/mocks/pkg/gbc/graphicsmocks",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":go_default_library",
+        "@com_github_golang_mock//gomock:go_default_library",
+    ],
+)
+
+# gazelle:exclude graphics_mocks.go
+gomock(
+    name = "mocks",
+    out = "graphics_mocks.go",
+    interfaces = [
+        "GPU",
+    ],
+    library = "//pkg/gbc/graphics:go_default_library",
+    package = "graphicsmocks",
+)

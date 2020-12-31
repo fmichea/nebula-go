@@ -2,12 +2,12 @@ package load
 
 import (
 	"nebula-go/pkg/common/testhelpers"
-	"nebula-go/pkg/gbc/memory/registers"
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	registerslib "nebula-go/pkg/gbc/z80/registers/lib"
 )
 
 func (s *unitTestSuite) TestHLPtrToByte_ValidCase() {
-	reg := registers.NewByte(0x00)
+	reg := registerslib.NewByte(0x00)
 
 	value := uint8(0xDE)
 	hl := uint16(0xABCD)
@@ -22,7 +22,7 @@ func (s *unitTestSuite) TestHLPtrToByte_ValidCase() {
 }
 
 func (s *unitTestSuite) TestHLPtrToByte_InvalidRead() {
-	reg := registers.NewByte(0x00)
+	reg := registerslib.NewByte(0x00)
 
 	value := uint8(0xDE)
 	hl := uint16(0xABCD)
@@ -41,7 +41,7 @@ func (s *unitTestSuite) TestByteToHLPtr_ValidCase() {
 
 	s.Regs.HL.Set(hl)
 
-	reg := registers.NewByte(value)
+	reg := registerslib.NewByte(value)
 
 	s.MockMMU.EXPECT().WriteByte(hl, value).Return(nil)
 
@@ -55,7 +55,7 @@ func (s *unitTestSuite) TestByteToHLPtr_InvalidWrite() {
 
 	s.Regs.HL.Set(hl)
 
-	reg := registers.NewByte(value)
+	reg := registerslib.NewByte(value)
 
 	s.MockMMU.EXPECT().WriteByte(hl, value).Return(testhelpers.ErrTesting1)
 

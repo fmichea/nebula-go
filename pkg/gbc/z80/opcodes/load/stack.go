@@ -1,13 +1,11 @@
 package load
 
 import (
-	"nebula-go/pkg/common/bitwise"
-	"nebula-go/pkg/gbc/memory/registers"
-	z80lib "nebula-go/pkg/gbc/z80/lib"
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	registerslib "nebula-go/pkg/gbc/z80/registers/lib"
 )
 
-func (f *Factory) PushDByte(reg registers.DByte) opcodeslib.Opcode {
+func (f *Factory) PushDByte(reg registerslib.DByte) opcodeslib.Opcode {
 	return func() opcodeslib.OpcodeResult {
 		sp := f.regs.SP.Get() - 2
 
@@ -19,7 +17,7 @@ func (f *Factory) PushDByte(reg registers.DByte) opcodeslib.Opcode {
 	}
 }
 
-func (f *Factory) PopDByte(reg registers.DByte) opcodeslib.Opcode {
+func (f *Factory) PopDByte(reg registerslib.DByte) opcodeslib.Opcode {
 	return func() opcodeslib.OpcodeResult {
 		sp := f.regs.SP.Get()
 
@@ -53,25 +51,7 @@ func (f *Factory) SPToAddress() opcodeslib.Opcode {
 // overflows on bit 4 and 8. So have to implement custom logic here.
 func (f *Factory) SPR8ToHL() opcodeslib.Opcode {
 	return func() opcodeslib.OpcodeResult {
-		sp := f.regs.SP.Get()
-
-		d8, err := f.mmu.ReadByte(f.regs.PC + 1)
-		if err != nil {
-			return opcodeslib.OpcodeError(err)
-		}
-
-		fn := opcodeslib.AddRelativeConstForMaskFunc(sp, d8)
-		carryFn := func(mask uint16) bool {
-			return bitwise.InverseMask16(fn(mask), mask) != 0
-		}
-
-		f.regs.HL.Set(fn(0xFFFF))
-
-		f.regs.F.Set(z80lib.FlagsCleared)
-		f.regs.F.HC.SetBool(carryFn(0x000F))
-		f.regs.F.CY.SetBool(carryFn(0x00FF))
-
-		return opcodeslib.OpcodeSuccess(2, 12)
+		return opcodeslib.SPR8ToDByte(f.mmu, f.regs, f.regs.HL, 12)
 	}
 }
 

@@ -3,6 +3,7 @@ package misc
 import (
 	"nebula-go/pkg/common/bitwise"
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	"nebula-go/pkg/gbc/z80/registers"
 )
 
 func (f *Factory) RRA() opcodeslib.Opcode {
@@ -12,10 +13,9 @@ func (f *Factory) RRA() opcodeslib.Opcode {
 		a := regs.A.Get()
 		cy := regs.F.CY.Get()
 
-		// NOTE: see comment in RLA, there is some inconsistencies on the handling of flags here. Following the
-		//  official z80 docs for now.
-		regs.F.NE.SetBool(false)
-		regs.F.HC.SetBool(false)
+		// NOTE: in the main z80 documentation, the ZF flag is not affected but based on the GameBoy opcode
+		//  documentations, it is reset. Using the Gameboy behavior since it seems to be what ROMs use.
+		regs.F.Set(registers.FlagsCleared)
 		regs.F.CY.Set(bitwise.LowBit8(a))
 
 		regs.A.Set((a >> 1) | (cy << 7))

@@ -2,24 +2,25 @@ package cb
 
 import (
 	"fmt"
+
 	"nebula-go/pkg/common/testhelpers"
-	"nebula-go/pkg/gbc/memory/registers"
-	z80_lib "nebula-go/pkg/gbc/z80/lib"
 	lib2 "nebula-go/pkg/gbc/z80/opcodes/lib"
+	"nebula-go/pkg/gbc/z80/registers"
+	registerslib "nebula-go/pkg/gbc/z80/registers/lib"
 )
 
 var _setBitCases = []cbBitOpTestCase{
-	{0xF0, 0, 0xF1, z80_lib.FlagsCleared, z80_lib.FlagsCleared},
-	{0xF0, 0, 0xF1, z80_lib.FlagsFullSet, z80_lib.FlagsFullSet},
+	{0xF0, 0, 0xF1, registers.FlagsCleared, registers.FlagsCleared},
+	{0xF0, 0, 0xF1, registers.FlagsFullSet, registers.FlagsFullSet},
 
-	{0xF0, 2, 0xF4, z80_lib.FlagsCleared, z80_lib.FlagsCleared},
-	{0xF0, 2, 0xF4, z80_lib.FlagsFullSet, z80_lib.FlagsFullSet},
+	{0xF0, 2, 0xF4, registers.FlagsCleared, registers.FlagsCleared},
+	{0xF0, 2, 0xF4, registers.FlagsFullSet, registers.FlagsFullSet},
 
-	{0xF0, 4, 0xF0, z80_lib.FlagsCleared, z80_lib.FlagsCleared},
-	{0xF0, 4, 0xF0, z80_lib.FlagsFullSet, z80_lib.FlagsFullSet},
+	{0xF0, 4, 0xF0, registers.FlagsCleared, registers.FlagsCleared},
+	{0xF0, 4, 0xF0, registers.FlagsFullSet, registers.FlagsFullSet},
 
-	{0xF0, 6, 0xF0, z80_lib.FlagsCleared, z80_lib.FlagsCleared},
-	{0xF0, 6, 0xF0, z80_lib.FlagsFullSet, z80_lib.FlagsFullSet},
+	{0xF0, 6, 0xF0, registers.FlagsCleared, registers.FlagsCleared},
+	{0xF0, 6, 0xF0, registers.FlagsFullSet, registers.FlagsFullSet},
 }
 
 func (s *unitTestSuite) TestSetBitInByte() {
@@ -35,7 +36,7 @@ func (s *unitTestSuite) TestSetBitInByte() {
 		s.Run(name, func() {
 			s.Regs.F.Set(c.initialFlags)
 
-			reg := registers.NewByte(c.initialValue)
+			reg := registerslib.NewByte(c.initialValue)
 
 			fn := s.factory.SetBitInByte(c.bit)(reg)
 			result := fn()

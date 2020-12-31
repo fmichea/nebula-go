@@ -21,7 +21,7 @@ func (s *unitTestSuite) jumpFuncValid(fn func() opcodeslib.OpcodeResult, shouldJ
 	result := fn()
 
 	if shouldJump {
-		s.Equal(opcodeslib.OpcodeSuccess(3, 16), result)
+		s.Equal(opcodeslib.OpcodeSuccess(0, 16), result)
 		s.Equal(addr, s.Regs.PC)
 	} else {
 		s.Equal(opcodeslib.OpcodeSuccess(3, 12), result)
@@ -102,6 +102,6 @@ func (s *unitTestSuite) TestJumpHL_ValidCase() {
 	fn := s.factory.JumpHL()
 	result := fn()
 
-	s.Equal(opcodeslib.OpcodeSuccess(1, 4), result)
+	s.Equal(opcodeslib.OpcodeSuccess(0, 4), result)
 	s.Equal(addr, s.Regs.PC)
 }

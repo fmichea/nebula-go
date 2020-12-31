@@ -9,7 +9,7 @@ func (f *Factory) CCF() opcodeslib.Opcode {
 		cy := f.regs.F.CY.Get()
 
 		f.regs.F.NE.SetBool(false)
-		f.regs.F.HC.Set(cy)
+		f.regs.F.HC.SetBool(false)
 		f.regs.F.CY.SetBool(cy == 0)
 		return opcodeslib.OpcodeSuccess(1, 4)
 	}

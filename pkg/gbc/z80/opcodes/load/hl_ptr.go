@@ -1,12 +1,12 @@
 package load
 
 import (
-	"nebula-go/pkg/gbc/memory/registers"
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	registerslib "nebula-go/pkg/gbc/z80/registers/lib"
 )
 
 // LoadHLPtrToByte implements the following opcode: ld $reg, (%hl)
-func (f *Factory) HLPtrToByte(reg registers.Byte) opcodeslib.Opcode {
+func (f *Factory) HLPtrToByte(reg registerslib.Byte) opcodeslib.Opcode {
 	return func() opcodeslib.OpcodeResult {
 		value, err := f.mmu.ReadByte(f.regs.HL.Get())
 		if err != nil {
@@ -17,7 +17,7 @@ func (f *Factory) HLPtrToByte(reg registers.Byte) opcodeslib.Opcode {
 	}
 }
 
-func (f *Factory) ByteToHLPtr(reg registers.Byte) opcodeslib.Opcode {
+func (f *Factory) ByteToHLPtr(reg registerslib.Byte) opcodeslib.Opcode {
 	return func() opcodeslib.OpcodeResult {
 		if err := f.mmu.WriteByte(f.regs.HL.Get(), reg.Get()); err != nil {
 			return opcodeslib.OpcodeError(err)

@@ -2,7 +2,7 @@ package cb
 
 import (
 	"nebula-go/pkg/common/bitwise"
-	"nebula-go/pkg/gbc/memory/registers"
+	registerslib "nebula-go/pkg/gbc/z80/registers/lib"
 )
 
 func (f *Factory) resetBit(bit uint8) func(uint8) uint8 {
@@ -12,7 +12,7 @@ func (f *Factory) resetBit(bit uint8) func(uint8) uint8 {
 }
 
 func (f *Factory) ResetBitInByte(bit uint8) cbbytefunc {
-	return func(reg registers.Byte) cbopcode {
+	return func(reg registerslib.Byte) cbopcode {
 		return f.buildCBOpcodeByte(reg, f.resetBit(bit))
 	}
 }

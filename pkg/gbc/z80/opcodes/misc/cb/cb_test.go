@@ -2,9 +2,10 @@ package cb
 
 import (
 	"fmt"
+
 	"nebula-go/pkg/common/testhelpers"
-	z80lib "nebula-go/pkg/gbc/z80/lib"
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	"nebula-go/pkg/gbc/z80/registers"
 )
 
 func (s *unitTestSuite) TestCB_ValidCase() {
@@ -14,10 +15,10 @@ func (s *unitTestSuite) TestCB_ValidCase() {
 		initialFlags uint8
 		resultFlags  uint8
 	}{
-		{0x82, z80lib.FlagsCleared, z80lib.ZF | z80lib.HC},
-		{0x82, z80lib.FlagsFullSet, z80lib.ZF | z80lib.HC | z80lib.CY},
-		{0x43, z80lib.FlagsCleared, z80lib.HC},
-		{0x43, z80lib.FlagsFullSet, z80lib.HC | z80lib.CY},
+		{0x82, registers.FlagsCleared, registers.ZF | registers.HC},
+		{0x82, registers.FlagsFullSet, registers.ZF | registers.HC | registers.CY},
+		{0x43, registers.FlagsCleared, registers.HC},
+		{0x43, registers.FlagsFullSet, registers.HC | registers.CY},
 	}
 
 	fn := s.factory.CB()

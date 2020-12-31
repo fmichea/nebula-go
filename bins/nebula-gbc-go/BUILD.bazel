@@ -15,6 +15,10 @@ go_library(
     importpath = "nebula-go/bins/nebula-gbc-go",
     visibility = ["//visibility:private"],
     deps = [
+        "//pkg/common/frontends:go_default_library",
+        "//pkg/gbc/graphics:go_default_library",
+        "//pkg/gbc/graphics/lib:go_default_library",
+        "//pkg/gbc/joypad:go_default_library",
         "//pkg/gbc/memory:go_default_library",
         "//pkg/gbc/z80:go_default_library",
         "@com_github_pkg_profile//:go_default_library",

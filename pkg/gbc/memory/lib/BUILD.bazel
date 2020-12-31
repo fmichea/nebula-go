@@ -3,8 +3,9 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "go_default_library",
     srcs = [
-        "access_type.go",
         "errors.go",
+        "hook.go",
+        "memory_io.go",
         "ram_size.go",
         "rom_market.go",
         "rom_size.go",
@@ -24,4 +25,31 @@ go_test(
     ],
     embed = [":go_default_library"],
     deps = ["@com_github_stretchr_testify//assert:go_default_library"],
+)
+
+##############################################################################
+# This code is generated, do not edit go_mocks_library or gomock manually, use
+# ./tools/generate-bazel-mocks-code.sh to generate.
+load("@com_github_jmhodges_bazel_gomock//:gomock.bzl", "gomock")
+
+go_library(
+    name = "go_mocks_library",
+    srcs = ["lib_mocks.go"],
+    importpath = "nebula-go/mocks/pkg/gbc/memory/libmocks",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":go_default_library",
+        "@com_github_golang_mock//gomock:go_default_library",
+    ],
+)
+
+# gazelle:exclude lib_mocks.go
+gomock(
+    name = "mocks",
+    out = "lib_mocks.go",
+    interfaces = [
+        "MemoryIO",
+    ],
+    library = "//pkg/gbc/memory/lib:go_default_library",
+    package = "libmocks",
 )

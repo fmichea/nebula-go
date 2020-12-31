@@ -2,8 +2,9 @@ package misc
 
 import (
 	"fmt"
-	z80lib "nebula-go/pkg/gbc/z80/lib"
+
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	"nebula-go/pkg/gbc/z80/registers"
 )
 
 func (s *unitTestSuite) TestCCF() {
@@ -11,8 +12,8 @@ func (s *unitTestSuite) TestCCF() {
 		initialFlags uint8
 		resultFlags  uint8
 	}{
-		{z80lib.FlagsCleared, z80lib.CY},
-		{z80lib.FlagsFullSet, z80lib.ZF | z80lib.HC},
+		{registers.FlagsCleared, registers.CY},
+		{registers.FlagsFullSet, registers.ZF},
 	}
 
 	fn := s.factory.CCF()

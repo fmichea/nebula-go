@@ -2,8 +2,9 @@ package misc
 
 import (
 	"fmt"
-	z80lib "nebula-go/pkg/gbc/z80/lib"
+
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	"nebula-go/pkg/gbc/z80/registers"
 )
 
 func (s *unitTestSuite) TestRRCA() {
@@ -14,12 +15,12 @@ func (s *unitTestSuite) TestRRCA() {
 		initialFlags uint8
 		resultFlags  uint8
 	}{
-		{0x00, 0x00, z80lib.FlagsCleared, z80lib.FlagsCleared},
-		{0x00, 0x00, z80lib.FlagsFullSet, z80lib.ZF},
-		{0xF0, 0x78, z80lib.FlagsCleared, z80lib.FlagsCleared},
-		{0xF1, 0xF8, z80lib.FlagsCleared, z80lib.CY},
-		{0xF1, 0xF8, z80lib.FlagsFullSet, z80lib.ZF | z80lib.CY},
-		{0x01, 0x80, z80lib.FlagsCleared, z80lib.CY},
+		{0x00, 0x00, registers.FlagsCleared, registers.FlagsCleared},
+		{0x00, 0x00, registers.FlagsFullSet, registers.FlagsCleared},
+		{0xF0, 0x78, registers.FlagsCleared, registers.FlagsCleared},
+		{0xF1, 0xF8, registers.FlagsCleared, registers.CY},
+		{0xF1, 0xF8, registers.FlagsFullSet, registers.CY},
+		{0x01, 0x80, registers.FlagsCleared, registers.CY},
 	}
 
 	fn := s.factory.RRCA()

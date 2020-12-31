@@ -2,21 +2,23 @@ package testhelpers
 
 import (
 	"nebula-go/mocks/pkg/gbc/memorymocks"
+
 	"nebula-go/pkg/gbc/memory"
-	z80_lib "nebula-go/pkg/gbc/z80/lib"
+	"nebula-go/pkg/gbc/z80/registers"
+
 	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
 )
 
-type SetupFactoryFunc = func(mmu memory.MMU, regs *z80_lib.Registers)
+type SetupFactoryFunc = func(mmu memory.MMU, regs *registers.Registers)
 
 type OpcodesUnitTestSuite interface {
 	suite.TestingSuite
 
 	InitializeFactorySetup(fn SetupFactoryFunc)
-	SetupTestFactory(mmu memory.MMU, regs *z80_lib.Registers)
+	SetupTestFactory(mmu memory.MMU, regs *registers.Registers)
 }
 
 func Run(t *testing.T, s OpcodesUnitTestSuite) {
@@ -30,7 +32,7 @@ type OpcodesUnitTestSuiteMeta struct {
 	mockCtrl *gomock.Controller
 
 	MockMMU *memorymocks.MockMMU
-	Regs    *z80_lib.Registers
+	Regs    *registers.Registers
 
 	setupFactoryFunc SetupFactoryFunc
 }
@@ -45,7 +47,7 @@ func (s *OpcodesUnitTestSuiteMeta) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 
 	s.MockMMU = memorymocks.NewMockMMU(s.mockCtrl)
-	s.Regs = z80_lib.NewRegisters()
+	s.Regs = registers.New()
 
 	s.setupFactoryFunc(s.MockMMU, s.Regs)
 }
@@ -57,6 +59,6 @@ func (s *OpcodesUnitTestSuiteMeta) TearDownTest() {
 func (s *OpcodesUnitTestSuiteMeta) EqualFlags(expected uint8) {
 	fmt := "flags were expected to be equal to \"%s\" but are \"%s\""
 
-	flagsExpected := z80_lib.NewFlags(expected)
+	flagsExpected := registers.NewFlags(expected)
 	s.Equal(flagsExpected.Get(), s.Regs.F.Get(), fmt, flagsExpected.String(), s.Regs.F.String())
 }

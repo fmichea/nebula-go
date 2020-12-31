@@ -2,17 +2,17 @@ package controlflow
 
 import (
 	"nebula-go/pkg/gbc/memory"
-	z80_lib "nebula-go/pkg/gbc/z80/lib"
+	"nebula-go/pkg/gbc/z80/registers"
 )
 
-func pushReturnAddress(mmu memory.MMU, regs *z80_lib.Registers, value uint16) error {
+func pushReturnAddress(mmu memory.MMU, regs *registers.Registers, value uint16) error {
 	sp := regs.SP.Get() - 2
 
 	regs.SP.Set(sp)
 	return mmu.WriteDByte(sp, value)
 }
 
-func popReturnAddress(mmu memory.MMU, regs *z80_lib.Registers) (uint16, error) {
+func popReturnAddress(mmu memory.MMU, regs *registers.Registers) (uint16, error) {
 	sp := regs.SP.Get()
 
 	value, err := mmu.ReadDByte(sp)

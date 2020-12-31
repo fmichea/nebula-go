@@ -2,29 +2,30 @@ package alu
 
 import (
 	"fmt"
+
 	"nebula-go/pkg/common/testhelpers"
-	"nebula-go/pkg/gbc/memory/registers"
-	z80lib "nebula-go/pkg/gbc/z80/lib"
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	"nebula-go/pkg/gbc/z80/registers"
+	registerslib "nebula-go/pkg/gbc/z80/registers/lib"
 )
 
 var _subTestCases = []aOpTestCase{
 	// Nothing substracted, result is 0.
-	{0x00, 0x00, 0x00, z80lib.FlagsCleared, z80lib.ZF | z80lib.NE},
+	{0x00, 0x00, 0x00, registers.FlagsCleared, registers.ZF | registers.NE},
 	// Carry borrows, both cy and hc get set.
-	{0x00, 0x01, 0xFF, z80lib.FlagsFullSet, z80lib.NE | z80lib.CY | z80lib.HC},
+	{0x00, 0x01, 0xFF, registers.FlagsFullSet, registers.NE | registers.CY | registers.HC},
 	// Carry borrows only on bit 4, no CY in result.
-	{0x22, 0x03, 0x1F, z80lib.FlagsCleared, z80lib.NE | z80lib.HC},
+	{0x22, 0x03, 0x1F, registers.FlagsCleared, registers.NE | registers.HC},
 	// Carry borrows only on bit 4, no CY in result.
-	{0x22, 0x03, 0x1F, z80lib.FlagsFullSet, z80lib.NE | z80lib.HC},
+	{0x22, 0x03, 0x1F, registers.FlagsFullSet, registers.NE | registers.HC},
 	// Carry borrows only on bit 4, no CY in result, case were bit 4 is not set in result.
-	{0x82, 0x03, 0x7F, z80lib.FlagsCleared, z80lib.NE | z80lib.HC},
+	{0x82, 0x03, 0x7F, registers.FlagsCleared, registers.NE | registers.HC},
 	// No borrow, not zero.
-	{0x02, 0x01, 0x01, z80lib.FlagsCleared, z80lib.NE},
+	{0x02, 0x01, 0x01, registers.FlagsCleared, registers.NE},
 }
 
 func (s *unitTestSuite) TestSubByteToA() {
-	reg := registers.NewByte(0x00)
+	reg := registerslib.NewByte(0x00)
 	fn := s.factory.SubByteToA(reg)
 
 	for _, c := range _subTestCases {

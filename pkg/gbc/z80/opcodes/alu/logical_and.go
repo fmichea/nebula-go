@@ -1,9 +1,9 @@
 package alu
 
 import (
-	"nebula-go/pkg/gbc/memory/registers"
-	z80lib "nebula-go/pkg/gbc/z80/lib"
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	"nebula-go/pkg/gbc/z80/registers"
+	registerslib "nebula-go/pkg/gbc/z80/registers/lib"
 )
 
 func (f *Factory) andConstToA(cst uint8) {
@@ -12,11 +12,11 @@ func (f *Factory) andConstToA(cst uint8) {
 	f.regs.A.Set(value)
 
 	// reset everything, and set HC.
-	f.regs.F.Set(z80lib.HC)
+	f.regs.F.Set(registers.HC)
 	f.regs.F.ZF.SetBool(value == 0)
 }
 
-func (f *Factory) AndByteToA(reg registers.Byte) opcodeslib.Opcode {
+func (f *Factory) AndByteToA(reg registerslib.Byte) opcodeslib.Opcode {
 	return func() opcodeslib.OpcodeResult {
 		f.andConstToA(reg.Get())
 		return opcodeslib.OpcodeSuccess(1, 4)

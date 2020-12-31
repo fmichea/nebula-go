@@ -9,23 +9,22 @@ import (
 	"nebula-go/pkg/gbc/memory/segments"
 )
 
-type Registers struct{}
-
 type MMU interface {
+	lib.MemoryIO
+
+	Cartridge() *cartridge.ROM
 	Registers() *Registers
-
-	ReadByte(addr uint16) (uint8, error)
-	WriteByte(addr uint16, value uint8) error
-
-	ReadDByte(addr uint16) (uint16, error)
-	WriteDByte(addr, value uint16) error
 }
 
 type mmu struct {
-	s   map[string]segments.Segment
-	mbc mbcs.MBC
+	segmentsMapping     map[string]segments.Segment
+	segmentsAddrMapping []segments.SegmentBase
+	mbc                 mbcs.MBC
 
-	regs *Registers
+	hooks map[uint16]lib.Hook
+
+	cartridge *cartridge.ROM
+	regs      *Registers
 }
 
 func NewMMUFromFile(out io.Writer, filename string) (MMU, error) {
@@ -41,7 +40,9 @@ func NewMMUFromCartridge(cr *cartridge.ROM) (MMU, error) {
 }
 
 func newMMUFromCartridge(cr *cartridge.ROM) (*mmu, error) {
-	results := map[string]segments.Segment{}
+	var err error
+
+	segmentsMapping := map[string]segments.Segment{}
 
 	configs := []struct {
 		name      string
@@ -107,97 +108,60 @@ func newMMUFromCartridge(cr *cartridge.ROM) (*mmu, error) {
 		if err != nil {
 			return nil, err
 		}
-		results[cfg.name] = s
+		segmentsMapping[cfg.name] = s
 	}
 
-	mbc := cr.MBCSelector.GetMBC(results["ROM"], results["ERAM"])
+	mbc := cr.MBCSelector.GetMBC(segmentsMapping["ROM"], segmentsMapping["ERAM"])
 	if mbc == nil {
 		return nil, lib.ErrMBCNotImplemented
 	}
 
+	segmentsAddrMapping := make([]segments.SegmentBase, 0x10000)
+	for _, s := range []segments.SegmentBase{
+		mbc,
+		segmentsMapping["VRAM"],
+		segmentsMapping["WRAM"],
+		segmentsMapping["OAM"],
+		segmentsMapping["IO_PORTS"],
+		segmentsMapping["HRAM"],
+	} {
+		for _, addressRange := range s.AddressRanges() {
+			for addr := uint32(addressRange.Start); addr <= uint32(addressRange.End); addr++ {
+				segmentsAddrMapping[addr] = s
+			}
+		}
+	}
+
 	result := &mmu{
-		s:   results,
-		mbc: mbc,
+		cartridge: cr,
+
+		segmentsMapping:     segmentsMapping,
+		segmentsAddrMapping: segmentsAddrMapping,
+		mbc:                 mbc,
+
+		hooks: map[uint16]lib.Hook{},
+	}
+
+	result.regs, err = InitializeRegisters(result, cr, segmentsMapping["VRAM"], segmentsMapping["WRAM"])
+	if err != nil {
+		return nil, err
 	}
 
 	return result, nil
+}
+
+func (m *mmu) Cartridge() *cartridge.ROM {
+	return m.cartridge
 }
 
 func (m *mmu) Registers() *Registers {
 	return m.regs
 }
 
-func (m *mmu) ReadByte(addr uint16) (uint8, error) {
-	return m.readByteInternal(addr)
-}
-
-func (m *mmu) ReadDByte(addr uint16) (uint16, error) {
-	var result uint16
-
-	if value, err := m.readByteInternal(addr + 1); err == nil {
-		result |= uint16(value) << 8
-	} else {
-		return 0, err
+func (m *mmu) getSegmentForAddress(addr uint16) (segments.SegmentBase, error) {
+	segment := m.segmentsAddrMapping[addr]
+	if segment == nil {
+		return nil, lib.ErrNoSegmentAtAddr
 	}
-
-	if value, err := m.readByteInternal(addr); err == nil {
-		result |= uint16(value)
-	} else {
-		return 0, err
-	}
-
-	return result, nil
-}
-
-func (m *mmu) WriteByte(addr uint16, value uint8) error {
-	return nil // FIXME
-}
-
-func (m *mmu) WriteDByte(addr, value uint16) error {
-	return nil // FIXME
-}
-
-func (m *mmu) readByteInternal(addr uint16) (uint8, error) {
-	ptr, err := m.realBytePtr(lib.AccessTypeRead, addr, 0)
-	if err != nil {
-		return 0, err
-	}
-
-	if ptr != nil {
-		result := m.readByteMasking(addr, *ptr)
-		// FIXME: add memory watch notification here.
-		return result, nil
-	}
-
-	return 0, lib.ErrInvalidRead
-}
-
-func (m *mmu) readByteMasking(addr uint16, value uint8) uint8 {
-	// FIXME: handle NR10...NRXX masks here.
-	return value
-}
-
-func (m *mmu) realBytePtr(accessType lib.AccessType, addr uint16, value uint8) (*uint8, error) {
-	// FIXME: Handle BGPD here.
-
-	// FIXME: return error when read on MBC with uninitialized? Cannot really happen?
-	if m.mbc.ContainsAddress(addr) {
-		return m.mbc.BytePtr(accessType, addr, value)
-	}
-
-	if segment := m.getSegment(addr); segment != nil {
-		return segment.BytePtr(addr), nil
-	}
-
-	return nil, nil
-}
-
-func (m *mmu) getSegment(addr uint16) segments.Segment {
-	// ROM and ERAM excluded because they are accessed through MBC.
-	for _, segment := range m.s {
-		if segment.ContainsAddress(addr) {
-			return segment
-		}
-	}
-	return nil
+	return segment, nil
 }

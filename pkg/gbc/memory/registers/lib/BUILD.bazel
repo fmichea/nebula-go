@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "bit_proxy.go",
+        "byte.go",
+        "byte_with_errors.go",
+        "flag.go",
+        "thread_safe_byte.go",
+    ],
+    importpath = "nebula-go/pkg/gbc/memory/registers/lib",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/common/bitwise:go_default_library"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "bit_proxy_test.go",
+        "byte_test.go",
+        "byte_with_errors_test.go",
+        "flag_test.go",
+        "thread_safe_byte_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

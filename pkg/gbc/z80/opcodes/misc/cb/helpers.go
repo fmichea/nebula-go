@@ -1,12 +1,12 @@
 package cb
 
 import (
-	"nebula-go/pkg/gbc/memory/registers"
 	opcodeslib "nebula-go/pkg/gbc/z80/opcodes/lib"
+	registerslib "nebula-go/pkg/gbc/z80/registers/lib"
 )
 
 type cbopcode func() opcodeslib.OpcodeResult
-type cbbytefunc func(registers.Byte) cbopcode
+type cbbytefunc func(registerslib.Byte) cbopcode
 type cbhlptrfunc func() cbopcode
 
 func (f *Factory) updateFlagsForCB(value, cy uint8) uint8 {
@@ -17,7 +17,7 @@ func (f *Factory) updateFlagsForCB(value, cy uint8) uint8 {
 	return value
 }
 
-func (f *Factory) buildCBOpcodeByte(reg registers.Byte, fn func(uint8) uint8) cbopcode {
+func (f *Factory) buildCBOpcodeByte(reg registerslib.Byte, fn func(uint8) uint8) cbopcode {
 	return func() opcodeslib.OpcodeResult {
 		reg.Set(fn(reg.Get()))
 		return opcodeslib.OpcodeSuccess(2, 8)

@@ -2,24 +2,39 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "go_default_library",
-    srcs = ["z80.go"],
+    srcs = [
+        "interrupts.go",
+        "z80.go",
+    ],
     importpath = "nebula-go/pkg/gbc/z80",
     visibility = ["//visibility:public"],
     deps = [
+        "//pkg/gbc/graphics:go_default_library",
         "//pkg/gbc/memory:go_default_library",
+        "//pkg/gbc/memory/registers:go_default_library",
+        "//pkg/gbc/memory/registers/lib:go_default_library",
         "//pkg/gbc/z80/lib:go_default_library",
         "//pkg/gbc/z80/opcodes:go_default_library",
         "//pkg/gbc/z80/opcodes/lib:go_default_library",
+        "//pkg/gbc/z80/registers:go_default_library",
     ],
 )
 
 go_test(
     name = "go_default_test",
-    srcs = ["z80_test.go"],
+    srcs = [
+        "interrupts_test.go",
+        "suite_test.go",
+        "z80_test.go",
+    ],
     embed = [":go_default_library"],
     deps = [
+        "//pkg/common/testhelpers:go_default_library",
+        "//pkg/gbc/graphics:go_mocks_library",
+        "//pkg/gbc/memory:go_default_library",
         "//pkg/gbc/memory:go_mocks_library",
+        "//pkg/gbc/memory/registers:go_default_library",
         "@com_github_golang_mock//gomock:go_default_library",
-        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//suite:go_default_library",
     ],
 )

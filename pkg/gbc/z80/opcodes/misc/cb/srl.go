@@ -2,14 +2,14 @@ package cb
 
 import (
 	"nebula-go/pkg/common/bitwise"
-	"nebula-go/pkg/gbc/memory/registers"
+	registerslib "nebula-go/pkg/gbc/z80/registers/lib"
 )
 
 func (f *Factory) srl(value uint8) uint8 {
 	return f.updateFlagsForCB(value>>1, bitwise.LowBit8(value))
 }
 
-func (f *Factory) SRLByte(reg registers.Byte) cbopcode {
+func (f *Factory) SRLByte(reg registerslib.Byte) cbopcode {
 	return f.buildCBOpcodeByte(reg, f.srl)
 }
 

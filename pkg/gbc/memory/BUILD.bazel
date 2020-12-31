@@ -1,27 +1,45 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
-load("@com_github_jmhodges_bazel_gomock//:gomock.bzl", "gomock")
 
 go_library(
     name = "go_default_library",
-    srcs = ["mmu.go"],
+    srcs = [
+        "mmu.go",
+        "mmu_errors_wrapper.go",
+        "mmu_hook.go",
+        "mmu_read.go",
+        "mmu_registers.go",
+        "mmu_write.go",
+    ],
     importpath = "nebula-go/pkg/gbc/memory",
     visibility = ["//visibility:public"],
     deps = [
+        "//pkg/common/bitwise:go_default_library",
         "//pkg/gbc/memory/cartridge:go_default_library",
         "//pkg/gbc/memory/lib:go_default_library",
         "//pkg/gbc/memory/mbcs:go_default_library",
+        "//pkg/gbc/memory/registers:go_default_library",
+        "//pkg/gbc/memory/registers/lib:go_default_library",
         "//pkg/gbc/memory/segments:go_default_library",
+        "@org_uber_go_multierr//:go_default_library",
     ],
 )
 
 go_test(
     name = "go_default_test",
-    srcs = ["mmu_test.go"],
+    srcs = [
+        "mmu_errors_wrapper_test.go",
+        "mmu_hook_test.go",
+        "mmu_read_test.go",
+        "mmu_test.go",
+        "mmu_write_test.go",
+    ],
     embed = [":go_default_library"],
     deps = [
+        "//pkg/common/testhelpers:go_default_library",
         "//pkg/gbc/memory/cartridge:go_default_library",
         "//pkg/gbc/memory/lib:go_default_library",
         "//pkg/gbc/memory/mbcs:go_default_library",
+        "//pkg/gbc/memory/registers/lib:go_default_library",
         "@com_github_stretchr_testify//assert:go_default_library",
         "@com_github_stretchr_testify//suite:go_default_library",
     ],
@@ -30,6 +48,8 @@ go_test(
 ##############################################################################
 # This code is generated, do not edit go_mocks_library or gomock manually, use
 # ./tools/generate-bazel-mocks-code.sh to generate.
+load("@com_github_jmhodges_bazel_gomock//:gomock.bzl", "gomock")
+
 go_library(
     name = "go_mocks_library",
     srcs = ["memory_mocks.go"],
@@ -37,6 +57,8 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         ":go_default_library",
+        "//pkg/gbc/memory/cartridge:go_default_library",
+        "//pkg/gbc/memory/lib:go_default_library",
         "@com_github_golang_mock//gomock:go_default_library",
     ],
 )

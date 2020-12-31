@@ -22,6 +22,10 @@ type ROM struct {
 	Data []uint8
 }
 
+func (r *ROM) IsCGB() bool {
+	return r.Type == lib.CGB001
+}
+
 func (r *ROM) PrintInformation(out io.Writer) error {
 	if _, err := fmt.Fprintln(out, "===== ROM INFORMATION ====="); err != nil {
 		return err

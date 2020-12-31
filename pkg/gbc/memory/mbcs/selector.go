@@ -76,13 +76,13 @@ func (s *Selector) GetMBC(rom segments.Segment, eram segments.Segment) MBC {
 		return newMBC1(rom, eram)
 
 	case 0x05, 0x06:
-	// load MBC2
+		return NewMBC2(rom, eram)
 
 	case 0x0F, 0x10, 0x11, 0x12, 0x13:
 	// load MBC3
 
 	case 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E:
-	// load MBC5
+		return NewMBC5(rom, eram)
 
 	default:
 		// log bad thing?
